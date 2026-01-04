@@ -1,5 +1,6 @@
 package com.utms.backend.model.entities;
 
+import com.utms.backend.model.enums.StudentType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,5 +28,8 @@ public class Student {
     private Double examScore;
 
     private String email;
+
+    @Enumerated(EnumType.STRING)
+    private StudentType studentType;
 
 }

@@ -3,6 +3,7 @@ package com.utms.backend.service;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Evaluation;
+import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.repository.ApplicationRepository;
 import com.utms.backend.repository.EvaluationRepository;
 import org.springframework.stereotype.Service;
@@ -24,22 +25,26 @@ public class EvaluationService {
 
     public List<Evaluation> evaluateDepartmentApplications(int quota) {
 
-        List<Application> apps = applicationRepository.findByStatus("SentToDepartment");
+        List<Application> apps =
+                applicationRepository.findByStatus(ApplicationStatus.SENT_TO_DEPARTMENT.toString());
 
         for (Application app : apps) {
 
-            double transferScore =
-                    (app.getGpa() * 0.1) + (Math.random() * 90);   // YKS yerine şimdilik dummy
+            double transferScore;
+
+            if (app.getStudent().getStudentType() == StudentType.EXTERNAL) {
+                transferScore = calculateExternalStudentScore(app);
+            } else {
+                transferScore = calculateInternalStudentScore(app);
+            }
 
             Evaluation ev = new Evaluation();
             ev.setApplication(app);
             ev.setScore(transferScore);
-
             evaluationRepository.save(ev);
         }
 
         List<Evaluation> all = evaluationRepository.findAll();
-
         all.sort(Comparator.comparing(Evaluation::getScore).reversed());
 
         int rank = 1;
@@ -55,5 +60,19 @@ public class EvaluationService {
 
         return all;
     }
-}
 
+    public Evaluation findApplicaitonByAppId(Long appId){
+        return evaluationRepository.findByApplication_AppId(appId)
+                .orElse(null);
+    }
+
+    // INTERNAL öğrenci – otomatik skor
+    private double calculateInternalStudentScore(Application app) {
+        return (app.getGpa() * 10) + Math.random() * 50;
+    }
+
+    // EXTERNAL öğrenci – belge / transkript bazlı skor
+    private double calculateExternalStudentScore(Application app) {
+        return (app.getGpa() * 8) + Math.random() * 40;
+    }
+}

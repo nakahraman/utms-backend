@@ -1,5 +1,6 @@
 package com.utms.backend.model.entities;
 
+import com.utms.backend.model.enums.DocumentType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,7 +20,9 @@ public class TransferDocument {
     @JoinColumn(name = "app_id")
     private Application application;
 
-    private String documentType;   // Transcript, YKS, EnglishCert …
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DocumentType documentType;
 
     private String fileName;
 

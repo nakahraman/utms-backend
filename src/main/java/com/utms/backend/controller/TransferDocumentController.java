@@ -1,6 +1,7 @@
 package com.utms.backend.controller;
 
 import com.utms.backend.model.entities.TransferDocument;
+import com.utms.backend.model.enums.DocumentType;
 import com.utms.backend.service.TransferDocumentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,7 +22,7 @@ public class TransferDocumentController {
     @PostMapping("/upload")
     @Operation(summary = "Upload document", description = "Upload transfer document for application")
     public TransferDocument uploadDocument(@RequestParam Long appId,
-                                           @RequestParam String documentType,
+                                           @RequestParam DocumentType documentType,
                                            @RequestParam MultipartFile file) throws Exception {
         return documentService.uploadDocument(appId, documentType, file);
     }
