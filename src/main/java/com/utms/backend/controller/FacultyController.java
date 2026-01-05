@@ -1,5 +1,6 @@
 package com.utms.backend.controller;
 
+import com.utms.backend.model.dto.ApplicationResponseDto;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.service.FacultyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,14 +23,14 @@ public class FacultyController {
     @PreAuthorize("hasRole('FACULTY')")
     @GetMapping("/evaluated")
     @Operation(summary = "Get evaluated applications", description = "Faculty views department evaluated applications")
-    public List<Application> getEvaluated() {
+    public List<ApplicationResponseDto> getEvaluated() {
         return facultyService.getDeptEvaluatedApplications();
     }
 
     @PreAuthorize("hasRole('FACULTY')")
     @PostMapping("/approve")
     @Operation(summary = "Approve application", description = "Faculty board approves evaluated application")
-    public Application approve(@RequestParam Long appId) {
+    public ApplicationResponseDto approve(@RequestParam Long appId) {
         return facultyService.approveFacultyDecision(appId);
     }
 }

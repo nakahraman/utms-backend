@@ -1,7 +1,7 @@
 package com.utms.backend.controller;
 
-import com.utms.backend.model.dto.LoginRequest;
-import com.utms.backend.model.dto.RegisterRequest;
+import com.utms.backend.model.record.LoginRequest;
+import com.utms.backend.model.record.RegisterRequest;
 import com.utms.backend.model.entities.User;
 import com.utms.backend.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;

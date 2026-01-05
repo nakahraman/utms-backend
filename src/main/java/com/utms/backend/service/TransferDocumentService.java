@@ -2,6 +2,8 @@ package com.utms.backend.service;
 
 import com.utms.backend.exception.BusinessException;
 import com.utms.backend.externalIntegration.DocumentVerificationService;
+import com.utms.backend.mapper.TransferDocumentMapper;
+import com.utms.backend.model.dto.TransferDocumentResponseDto;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.TransferDocument;
 import com.utms.backend.model.enums.DocumentType;
@@ -27,15 +29,16 @@ public class TransferDocumentService {
     private final TransferDocumentRepository documentRepository;
     private final ApplicationRepository applicationRepository;
     private final DocumentVerificationService documentVerificationService;
+    private final TransferDocumentMapper transferDocumentMapper;
 
     private final String uploadDir = "uploads/";
 
     private static final List<String> ALLOWED_TYPES =
             List.of("application/pdf", "image/jpeg");
 
-    public TransferDocument uploadDocument(Long appId,
-                                           DocumentType documentType,
-                                           MultipartFile file) throws Exception {
+    public TransferDocumentResponseDto uploadDocument(Long appId,
+                                                      DocumentType documentType,
+                                                      MultipartFile file) throws Exception {
 
         if (file.getSize() > 10 * 1024 * 1024) {
             throw new BusinessException("DOC-413", "Dosya boyutu, izin verilen azami 10 MB sınırını aşmaktadır.");
@@ -75,7 +78,8 @@ public class TransferDocumentService {
         doc.setFileName(file.getOriginalFilename());
         doc.setFilePath(targetFile.getAbsolutePath());
 
-        return documentRepository.save(doc);
+        TransferDocument saved = documentRepository.save(doc);
+        return transferDocumentMapper.map(saved);
     }
 
     private boolean scanForVirus(MultipartFile file) {

@@ -1,5 +1,6 @@
 package com.utms.backend.controller;
 
+import com.utms.backend.model.dto.ApplicationResponseDto;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.service.RegistrarService;
 import com.utms.backend.service.ResultPublishService;
@@ -26,14 +27,14 @@ public class RegistrarController {
     @PreAuthorize("hasRole('REGISTRAR')")
     @GetMapping("/faculty-approved")
     @Operation(summary = "Get faculty approved", description = "Registrar views faculty approved applications")
-    public List<Application> getFacultyApproved() {
+    public List<ApplicationResponseDto> getFacultyApproved() {
         return registrarService.getFacultyApprovedApplications();
     }
 
     @PreAuthorize("hasRole('REGISTRAR')")
     @PostMapping("/receive")
     @Operation(summary = "Receive application", description = "Registrar receives application from faculty")
-    public Application receive(@RequestParam Long appId) {
+    public ApplicationResponseDto receive(@RequestParam Long appId) {
         return registrarService.receiveFromFaculty(appId);
     }
 

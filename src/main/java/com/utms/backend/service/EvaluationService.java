@@ -1,5 +1,9 @@
 package com.utms.backend.service;
 
+import com.utms.backend.exception.BusinessException;
+import com.utms.backend.mapper.EvaluationMapper;
+import com.utms.backend.model.dto.EvaluationResponseDto;
+import com.utms.backend.model.entities.Department;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Evaluation;
@@ -20,8 +24,9 @@ public class EvaluationService {
     private final ApplicationService applicationService;
     private final EvaluationRepository evaluationRepository;
     private final ApplicationStatusTransitionService transitionService;
+    private final EvaluationMapper evaluationMapper;
 
-    public List<Evaluation> evaluateDepartmentApplications(int quota) {
+    public List<EvaluationResponseDto> evaluateDepartmentApplications(int quota) {
 
         Long facultyId = SecurityUtil.getCurrentUserFacultyId();
         List<Application> apps = applicationService.getDeptEvaluatedApplications(ApplicationStatus.SENT_TO_DEPARTMENT, facultyId);
@@ -56,7 +61,9 @@ public class EvaluationService {
                     "External student routed to YDYO");
         }
 
-        return all;
+        return all.stream()
+                .map(evaluationMapper::map)
+                .toList();
     }
 
     public Evaluation findApplicaitonByAppId(Long appId){
@@ -72,5 +79,20 @@ public class EvaluationService {
     // EXTERNAL öğrenci – belge / transkript bazlı skor
     private double calculateExternalStudentScore(Application app) {
         return (app.getGpa() * 8) + Math.random() * 40;
+    }
+
+
+
+    public EvaluationResponseDto getEvaluationById(Long id) {
+        return evaluationRepository.findByIdWithFaculty(id)
+                .map(evaluationMapper::map)
+                .orElseThrow(() -> new BusinessException("EVL-404", "Evaluation bulunamadı"));
+    }
+
+    public List<EvaluationResponseDto> getAll() {
+        return evaluationRepository.findAllWithFaculty()
+                .stream()
+                .map(evaluationMapper::map)
+                .toList();
     }
 }

@@ -1,5 +1,6 @@
 package com.utms.backend.service;
 
+import com.utms.backend.model.dto.ApplicationResponseDto;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Evaluation;
 import com.utms.backend.model.enums.ApplicationStatus;

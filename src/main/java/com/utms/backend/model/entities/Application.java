@@ -11,7 +11,15 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "applications")
+@Table(
+        name = "applications",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_student_target_dept",
+                        columnNames = {"student_id", "department_id"}
+                )
+        }
+)
 @Data
 @Builder
 @AllArgsConstructor

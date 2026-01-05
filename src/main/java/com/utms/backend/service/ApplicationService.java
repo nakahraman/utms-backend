@@ -2,6 +2,8 @@ package com.utms.backend.service;
 
 import com.utms.backend.exception.BusinessException;
 import com.utms.backend.externalIntegration.ExternalVerificationClient;
+import com.utms.backend.mapper.ApplicationMapper;
+import com.utms.backend.model.dto.ApplicationResponseDto;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Department;
 import com.utms.backend.model.entities.Evaluation;
@@ -16,6 +18,7 @@ import com.utms.backend.repository.StudentRepository;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -32,15 +35,23 @@ public class ApplicationService {
     private final TransferDocumentService documentService;
     private final NotificationService notificationService;
     private final ApplicationStatusTransitionService transitionService;
+    private final ApplicationMapper applicationMapper;
 
 
-    public Application submitApplication(Long studentId, Long departmentId) {
+    public ApplicationResponseDto submitApplication(Long studentId, Long departmentId) {
 
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException("STD-404", "Öğrenci bulunamadı."));
 
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new BusinessException("DPT-404", "Bölüm bulunamadı."));
+
+        if (applicationRepository.existsByStudent_StudentIdAndDepartment_DeptId(studentId, departmentId)) {
+            throw new BusinessException(
+                    "APP-409",
+                    "Bu bölüme daha önce başvuru yaptınız."
+            );
+        }
 
         Application application = new Application();
         application.setStudent(student);
@@ -54,37 +65,48 @@ public class ApplicationService {
             application.setValidationStatus(ValidationStatus.FLAGGED);
         }
 
-        Application saved = applicationRepository.save(application);
-
-        // UC-002 – Submit sonrası otomatik bildirim
         try {
-            String msg = "Yatay geçiş başvurunuz başarıyla alınmıştır. Başvuru numaranız: "
-                         + saved.getAppId();
+            // 2️⃣ Mutlak güvenlik (race-condition kilidi)
+            Application saved = applicationRepository.save(application);
 
-            notificationService.create(saved, "SUBMIT", msg);
+            try {
+                String msg = "Yatay geçiş başvurunuz başarıyla alınmıştır. Başvuru numaranız: " + saved.getAppId();
+                notificationService.create(saved, "SUBMIT", msg);
+            } catch (Exception e) {
+                System.err.println("Başvuru bildirimi gönderilemedi: " + e.getMessage());
+            }
 
-        } catch (Exception e) {
-            System.err.println("Başvuru bildirimi gönderilemedi: " + e.getMessage());
+            return applicationMapper.map(saved);
+
+        } catch (DataIntegrityViolationException e) {
+            // Aynı anda iki submit geldi → DB unique constraint yakaladı
+            throw new BusinessException("APP-409", "Bu bölüme daha önce başvuru yaptınız.");
         }
-
-        return saved;
     }
 
-    public List<Application> getApplicationsByStudent(Long studentId) {
-        return applicationRepository.findByStudent_StudentId(studentId);
+    public List<ApplicationResponseDto> getApplicationsByStudent(Long studentId) {
+        return applicationRepository.findAllByStudentWithRelations(studentId)
+                .stream()
+                .map(applicationMapper::map)
+                .toList();
     }
 
-    public List<Application> getSubmittedApplications() {
-        return getApplicationsByStatus(ApplicationStatus.SUBMITTED);
+    public List<ApplicationResponseDto> getSubmittedApplications() {
+
+        return applicationRepository.findByStatus(ApplicationStatus.SUBMITTED)
+                .stream()
+                .map(applicationMapper::map)
+                .toList();
     }
 
     public List<Application> getApplicationsByStatus(ApplicationStatus status) {
+
         return applicationRepository.findByStatus(status);
     }
 
-    public Application validateApplication(Long appId, boolean valid) {
+    public ApplicationResponseDto validateApplication(Long appId, boolean valid) {
 
-        Application app = findById(appId);
+        Application app = findApplicationById(appId);
 
         documentService.validateMandatoryDocuments(app);
 
@@ -102,8 +124,9 @@ public class ApplicationService {
 
             notificationService.create(app, "ENGLISH_PREP", msg);
 
-            return transitionService.transition(app, ApplicationStatus.SENT_TO_YDYO,
+            Application updated = transitionService.transition(app, ApplicationStatus.SENT_TO_YDYO,
                     "External student routed to YDYO");
+            return applicationMapper.map(updated);
         }
 
         // 🔵 INTERNAL öğrenci → otomatik doğrulama
@@ -113,39 +136,52 @@ public class ApplicationService {
             || !externalClient.verifyEnglishProficiency(studentNo)) {
 
             app.setValidationStatus(ValidationStatus.FLAGGED);
-            return transitionService.transition(app, ApplicationStatus.RETURNED,
+            Application updated = transitionService.transition(app, ApplicationStatus.RETURNED,
                     "Internal validation failed");
+
+            return applicationMapper.map(updated);
         }
 
         // 🧑‍💼 ÖİDB manuel kararı (INTERNAL)
         if (valid) {
             app.setValidationStatus(ValidationStatus.VALID);
-            return transitionService.transition(app, ApplicationStatus.VALIDATED,
+            Application updated = transitionService.transition(app, ApplicationStatus.VALIDATED,
                     "Registrar validated internal student");
+            return applicationMapper.map(updated);
+
         } else {
             app.setValidationStatus(ValidationStatus.FLAGGED);
-            return transitionService.transition(app, ApplicationStatus.RETURNED,
+            Application updated = transitionService.transition(app, ApplicationStatus.RETURNED,
                     "Registrar returned internal student");
+            return applicationMapper.map(updated);
         }
     }
 
-    public List<Application> getValidatedApplicationsForFaculty() {
-        return applicationRepository.findByStatusIn(
-                List.of(ApplicationStatus.VALIDATED, ApplicationStatus.YDYO_APPROVED)
-        );
+    public List<ApplicationResponseDto> getValidatedApplicationsForFaculty() {
+
+        List<ApplicationStatus> statuses =
+                List.of(ApplicationStatus.VALIDATED, ApplicationStatus.YDYO_APPROVED);
+
+        return applicationRepository.findByStatusInWithRelations(statuses)
+                .stream()
+                .map(applicationMapper::map)
+                .toList();
     }
 
-    public Application sendToDepartment(Long appId) {
+    public ApplicationResponseDto sendToDepartment(Long appId) {
 
-        Application app = findById(appId);
+        Application app = findApplicationById(appId);
 
-        return transitionService.transition(app, ApplicationStatus.SENT_TO_DEPARTMENT, "Faculty forwarded to department");
+        Application updated = transitionService.transition(app, ApplicationStatus.SENT_TO_DEPARTMENT,
+                "Faculty forwarded to department");
+
+        return applicationMapper.map(updated);
     }
 
     @Transactional
     public void finalizeApplicationResult(Long appId, Evaluation ev) {
 
-        Application app = findById(appId);
+        Application app = findApplicationById(appId);
 
         ApplicationStatus status = decideFinalStatus(ev);
         transitionService.transition(app, status, "Final evaluation published");
@@ -157,8 +193,8 @@ public class ApplicationService {
         return ApplicationStatus.REJECTED;
     }
 
-    public Application findById(Long appId){
-        return applicationRepository.findById(appId)
+    public Application findApplicationById(Long appId){
+        return applicationRepository.findByIdWithRelations(appId)
                 .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
     }
 

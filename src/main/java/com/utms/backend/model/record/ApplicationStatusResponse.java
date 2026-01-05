@@ -1,4 +1,4 @@
-package com.utms.backend.model.dto;
+package com.utms.backend.model.record;
 
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.enums.ValidationStatus;

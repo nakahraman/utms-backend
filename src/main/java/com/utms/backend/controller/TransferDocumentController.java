@@ -1,5 +1,6 @@
 package com.utms.backend.controller;
 
+import com.utms.backend.model.dto.TransferDocumentResponseDto;
 import com.utms.backend.model.entities.TransferDocument;
 import com.utms.backend.model.enums.DocumentType;
 import com.utms.backend.service.TransferDocumentService;
@@ -23,9 +24,9 @@ public class TransferDocumentController {
     @PreAuthorize("hasRole('STUDENT')")
     @PostMapping("/upload")
     @Operation(summary = "Upload document", description = "Student uploads document for application")
-    public TransferDocument uploadDocument(@RequestParam Long appId,
-                                           @RequestParam DocumentType documentType,
-                                           @RequestParam MultipartFile file) throws Exception {
+    public TransferDocumentResponseDto uploadDocument(@RequestParam Long appId,
+                                                      @RequestParam DocumentType documentType,
+                                                      @RequestParam MultipartFile file) throws Exception {
         return documentService.uploadDocument(appId, documentType, file);
     }
 }

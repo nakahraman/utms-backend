@@ -1,4 +1,4 @@
-package com.utms.backend.model.dto;
+package com.utms.backend.model.record;
 
 
 public record LoginRequest(

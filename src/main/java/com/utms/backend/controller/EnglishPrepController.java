@@ -1,5 +1,6 @@
 package com.utms.backend.controller;
 
+import com.utms.backend.model.dto.ApplicationResponseDto;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.repository.EnglishPrepService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,8 +25,8 @@ public class EnglishPrepController {
     @PreAuthorize("hasRole('YDYO')")
     @PostMapping("/evaluate")
     @Operation(summary = "Evaluate English proficiency", description = "YDYO evaluates student's English result")
-    public Application evaluate(@RequestParam Long appId,
-                                @RequestParam boolean passed) {
+    public ApplicationResponseDto evaluate(@RequestParam Long appId,
+                                           @RequestParam boolean passed) {
         return englishPrepService.submitEnglishResult(appId, passed);
     }
 }
