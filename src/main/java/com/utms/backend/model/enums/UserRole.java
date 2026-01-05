@@ -5,5 +5,7 @@ public enum UserRole {
     FACULTY,
     YGK,
     OIDB,
-    ADMIN
+    ADMIN,
+    REGISTRAR,
+    YDYO
 }

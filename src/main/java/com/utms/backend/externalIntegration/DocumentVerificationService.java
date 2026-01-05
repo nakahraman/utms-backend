@@ -16,8 +16,8 @@ public class DocumentVerificationService {
     public boolean verify(DocumentType type, TransferDocument doc) {
 
         return clients.stream()
-                .filter(c -> c.verify(type, doc))
-                .findFirst()
-                .isPresent();
+                .filter(c -> c.supports(type))
+                .anyMatch(c -> c.verify(doc));
     }
+
 }

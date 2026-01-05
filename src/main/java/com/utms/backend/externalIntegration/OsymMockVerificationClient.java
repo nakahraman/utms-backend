@@ -8,10 +8,14 @@ import org.springframework.stereotype.Service;
 public class OsymMockVerificationClient implements ExternalDocumentVerificationClient {
 
     @Override
-    public boolean verify(DocumentType type, TransferDocument doc) {
-        if (type != DocumentType.YKS_RESULT) return false;
+    public boolean supports(DocumentType type) {
+        return type == DocumentType.YKS_RESULT;
+    }
 
-        return doc.getFileName().contains("osym")
-               || doc.getFileName().toLowerCase().contains("exam");
+    @Override
+    public boolean verify(TransferDocument doc) {
+        return doc.getFileName().toLowerCase().contains("osym")
+               || doc.getFileName().toLowerCase().contains("exam")
+                || doc.getFileName().toLowerCase().contains("yks");
     }
 }

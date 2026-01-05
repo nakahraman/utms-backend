@@ -8,9 +8,12 @@ import org.springframework.stereotype.Service;
 public class UbysMockVerificationClient implements ExternalDocumentVerificationClient {
 
     @Override
-    public boolean verify(DocumentType type, TransferDocument doc) {
-        if (type != DocumentType.TRANSCRIPT) return false;
+    public boolean supports(DocumentType type) {
+        return type == DocumentType.TRANSCRIPT;
+    }
 
+    @Override
+    public boolean verify(TransferDocument doc) {
         return doc.getFileName().toLowerCase().contains("transcript");
     }
 }

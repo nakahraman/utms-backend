@@ -5,6 +5,7 @@ import com.utms.backend.model.enums.DocumentType;
 
 public interface ExternalDocumentVerificationClient {
 
-    boolean verify(DocumentType type, TransferDocument doc);
+    boolean supports(DocumentType type);
+    boolean verify(TransferDocument doc);
 }
 

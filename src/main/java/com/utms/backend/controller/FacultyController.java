@@ -4,6 +4,7 @@ import com.utms.backend.model.entities.Application;
 import com.utms.backend.service.FacultyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -18,14 +19,16 @@ public class FacultyController {
         this.facultyService = facultyService;
     }
 
+    @PreAuthorize("hasRole('FACULTY')")
     @GetMapping("/evaluated")
-    @Operation(summary = "Get evaluated applications", description = "Get department evaluated applications")
+    @Operation(summary = "Get evaluated applications", description = "Faculty views department evaluated applications")
     public List<Application> getEvaluated() {
         return facultyService.getDeptEvaluatedApplications();
     }
 
+    @PreAuthorize("hasRole('FACULTY')")
     @PostMapping("/approve")
-    @Operation(summary = "Approve application", description = "Faculty board approves application")
+    @Operation(summary = "Approve application", description = "Faculty board approves evaluated application")
     public Application approve(@RequestParam Long appId) {
         return facultyService.approveFacultyDecision(appId);
     }
