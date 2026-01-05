@@ -1,6 +1,7 @@
 package com.utms.backend.model.entities;
 
-import com.utms.backend.model.enums.UserRole;
+import com.utms.backend.model.enums.Role;
+import com.utms.backend.model.enums.UserSource;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,9 +22,21 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserRole role;
+    private Role role;
 
+    @Column(unique = true, nullable = false)
     private String username;
 
+    @Column(nullable = false)
     private String passwordHash;
+
+    @ManyToOne
+    @JoinColumn(name = "faculty_id")
+    private Faculty faculty;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserSource userSource; // UBYS or EXTERNAL
+
+
 }

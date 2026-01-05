@@ -5,6 +5,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.util.Optional;
+import java.security.Principal;
 @Component
 public class AuditInterceptor implements HandlerInterceptor {
 
@@ -19,7 +21,9 @@ public class AuditInterceptor implements HandlerInterceptor {
                              HttpServletResponse response,
                              Object handler) {
 
-        String username = request.getUserPrincipal().getName();
+        String username = Optional.ofNullable(request.getUserPrincipal())
+                .map(Principal::getName)
+                .orElse("Anonymous");
         String role = request.isUserInRole("ROLE_OIDB") ? "OIDB" : "USER";
 
         auditService.log(username, role,

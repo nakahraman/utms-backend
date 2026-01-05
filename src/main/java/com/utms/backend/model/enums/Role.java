@@ -1,6 +1,6 @@
 package com.utms.backend.model.enums;
 
-public enum UserRole {
+public enum Role {
     STUDENT,
     FACULTY,
     YGK,

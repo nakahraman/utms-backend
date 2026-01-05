@@ -21,7 +21,9 @@ public class Student {
 
     private String name;
 
-    private String department;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dept_id")
+    private Department department;
 
     private Double gpa;
 

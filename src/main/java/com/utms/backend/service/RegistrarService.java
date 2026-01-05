@@ -1,9 +1,8 @@
 package com.utms.backend.service;
 
-import com.utms.backend.exception.BusinessException;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.entities.Application;
-import com.utms.backend.repository.ApplicationRepository;
+import com.utms.backend.security.SecurityUtil;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +17,8 @@ public class RegistrarService {
     private final ApplicationStatusTransitionService transitionService;
 
     public List<Application> getFacultyApprovedApplications() {
-        return applicationService.getApplicationsByStatus(ApplicationStatus.FACULTY_APPROVED);
+        Long facultyId = SecurityUtil.getCurrentUserFacultyId();
+        return applicationService.getDeptEvaluatedApplications(ApplicationStatus.FACULTY_APPROVED, facultyId);
     }
 
     public Application receiveFromFaculty(Long appId) {

@@ -4,8 +4,9 @@ import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Evaluation;
 import com.utms.backend.model.enums.StudentType;
-import com.utms.backend.repository.ApplicationRepository;
 import com.utms.backend.repository.EvaluationRepository;
+import com.utms.backend.security.SecurityUtil;
+import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,13 +17,14 @@ import java.util.List;
 @AllArgsConstructor
 public class EvaluationService {
 
-    private final ApplicationRepository applicationRepository;
+    private final ApplicationService applicationService;
     private final EvaluationRepository evaluationRepository;
+    private final ApplicationStatusTransitionService transitionService;
 
     public List<Evaluation> evaluateDepartmentApplications(int quota) {
 
-        List<Application> apps =
-                applicationRepository.findByStatus(ApplicationStatus.SENT_TO_DEPARTMENT);
+        Long facultyId = SecurityUtil.getCurrentUserFacultyId();
+        List<Application> apps = applicationService.getDeptEvaluatedApplications(ApplicationStatus.SENT_TO_DEPARTMENT, facultyId);
 
         for (Application app : apps) {
 
@@ -50,8 +52,8 @@ public class EvaluationService {
             evaluationRepository.save(ev);
 
             Application app = ev.getApplication();
-            app.setStatus(ApplicationStatus.DEPT_EVALUATED);
-            applicationRepository.save(app);
+            transitionService.transition(app, ApplicationStatus.DEPT_EVALUATED,
+                    "External student routed to YDYO");
         }
 
         return all;

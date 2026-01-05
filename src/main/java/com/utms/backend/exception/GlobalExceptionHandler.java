@@ -1,6 +1,7 @@
 package com.utms.backend.exception;
 
 import com.utms.backend.model.record.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -22,7 +23,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
-    @ExceptionHandler(Exception.class)
+ /*   @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
 
         ErrorResponse body = new ErrorResponse(
@@ -33,5 +34,20 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.internalServerError().body(body);
     }
+
+  */
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
+        // Hatayı konsola (IntelliJ terminaline) yazdır
+        ex.printStackTrace();
+
+        // Hata mesajını Swagger'da doğrudan görmek için mesajı ErrorResponse'a koy
+        return ResponseEntity.internalServerError().body(
+                new ErrorResponse("SYS-500", ex.getMessage(), LocalDateTime.now())
+        );
+    }
 }
+
+
 

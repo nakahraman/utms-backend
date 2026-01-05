@@ -20,7 +20,10 @@ public class Department {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long deptId;
 
-    private Long facultyId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "faculty_id", nullable = false)
+    private Faculty faculty;
+
 
     private String deptName;
 

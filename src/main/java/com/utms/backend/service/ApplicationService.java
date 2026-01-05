@@ -162,4 +162,11 @@ public class ApplicationService {
                 .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
     }
 
+    public List<Application> getDeptEvaluatedApplications(ApplicationStatus status, Long facultyId) {
+        return applicationRepository
+                .findByStatusAndDepartment_Faculty_FacultyId(
+                        status,
+                        facultyId
+                );
+    }
 }

@@ -1,9 +1,8 @@
 package com.utms.backend.service;
 
-import com.utms.backend.exception.BusinessException;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.entities.Application;
-import com.utms.backend.repository.ApplicationRepository;
+import com.utms.backend.security.SecurityUtil;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +18,8 @@ public class FacultyService {
 
 
     public List<Application> getDeptEvaluatedApplications() {
-        return applicationService.getApplicationsByStatus(ApplicationStatus.DEPT_EVALUATED);
+        Long facultyId = SecurityUtil.getCurrentUserFacultyId();
+        return applicationService.getDeptEvaluatedApplications(ApplicationStatus.DEPT_EVALUATED, facultyId);
     }
 
     public Application approveFacultyDecision(Long appId) {

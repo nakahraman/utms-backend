@@ -4,7 +4,6 @@ import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Evaluation;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.enums.StudentType;
-import com.utms.backend.repository.ApplicationRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
