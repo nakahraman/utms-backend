@@ -1,10 +1,19 @@
 package com.utms.backend.externalIntegration;
 
-public interface ExternalVerificationClient {
+import org.springframework.stereotype.Service;
 
-    boolean verifyExamScore(String studentNumber);
+@Service
+public class ExternalVerificationClient {
 
-    boolean verifyEnglishProficiency(String studentNumber);
+    public boolean verifyExamScore(String studentNumber) {
+        return true;
+    }
 
-    double getConvertedGpa(String studentNumber);
+    public boolean verifyEnglishProficiency(String studentNumber) {
+        return true;
+    }
+
+    public double getConvertedGpa(String studentNumber) {
+        return 2.75;
+    }
 }

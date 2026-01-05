@@ -1,6 +1,7 @@
 package com.utms.backend.service;
 
 import com.utms.backend.exception.BusinessException;
+import com.utms.backend.externalIntegration.DocumentVerificationService;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.TransferDocument;
 import com.utms.backend.model.enums.DocumentType;
@@ -24,7 +25,8 @@ import java.util.stream.Collectors;
 public class TransferDocumentService {
 
     private final TransferDocumentRepository documentRepository;
-    private final ApplicationService applicationService;
+    private final ApplicationRepository applicationRepository;
+    private final DocumentVerificationService documentVerificationService;
 
     private final String uploadDir = "uploads/";
 
@@ -43,7 +45,8 @@ public class TransferDocumentService {
             throw new BusinessException("DOC-400", "Sadece PDF veya JPEG dosyaları yüklenebilir.");
         }
 
-        Application application = applicationService.findById(appId);
+        Application application = applicationRepository.findById(appId)
+                .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
 
         if (application.getStudent().getStudentType() == StudentType.EXTERNAL
             && file == null) {
@@ -90,6 +93,7 @@ public class TransferDocumentService {
                 .map(TransferDocument::getDocumentType)
                 .collect(Collectors.toSet());
 
+        // 1️⃣ Zorunlu belgeler eksik mi?
         for (DocumentType type : DocumentType.values()) {
             if (!uploadedTypes.contains(type)) {
                 throw new BusinessException(
@@ -99,11 +103,15 @@ public class TransferDocumentService {
             }
         }
 
-        for (DocumentType type : DocumentType.values()) {
-            if (!uploadedTypes.contains(type.name())) {
+        // 2️⃣ Yüklenen belgeler geçerli mi? (MOCK doğrulama)
+        for (TransferDocument doc : docs) {
+
+            boolean valid = documentVerificationService.verify(doc.getDocumentType(), doc);
+
+            if (!valid) {
                 throw new BusinessException(
-                        "DOC-402",
-                        "Dış üniversite öğrencileri için zorunlu belge eksik: " + type
+                        "DOC-403",
+                        "Belge doğrulanamadı: " + doc.getFileName()
                 );
             }
         }
@@ -111,6 +119,27 @@ public class TransferDocumentService {
 
     public boolean hasDocument(Long appId, DocumentType type) {
         return documentRepository.existsByApplication_AppIdAndDocumentType(appId, type);
+    }
+
+    public void saveMockDocument(Application app, DocumentType type, byte[] content) {
+
+        try {
+            Files.createDirectories(Path.of(uploadDir));
+
+            String name = "AUTO_" + type.name() + "_" + app.getAppId() + ".pdf";
+            Path path = Path.of(uploadDir, name);
+            Files.write(path, content);
+
+            TransferDocument doc = new TransferDocument();
+            doc.setApplication(app);
+            doc.setDocumentType(type);
+            doc.setFileName(name);
+            doc.setFilePath(path.toString());
+
+            documentRepository.save(doc);
+        } catch (Exception e) {
+            throw new RuntimeException("Mock belge üretilemedi");
+        }
     }
 
 }
