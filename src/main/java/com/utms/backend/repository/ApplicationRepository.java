@@ -9,7 +9,8 @@ import java.util.List;
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
     List<Application> findByStudent_StudentId(Long studentId);
 
-    List<Application> findByStatus(String status);
+    List<Application> findByStatus(ApplicationStatus status);
+
     List<Application> findByStatusAndValidationStatus(String status, String validationStatus);
 
     List<Application> findByStatusIn(List<ApplicationStatus> statuses);

@@ -4,30 +4,31 @@ import com.utms.backend.exception.BusinessException;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.repository.ApplicationRepository;
+import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class RegistrarService {
 
-    private final ApplicationRepository applicationRepository;
-
-    public RegistrarService(ApplicationRepository applicationRepository) {
-        this.applicationRepository = applicationRepository;
-    }
+    private final ApplicationService applicationService;
+    private final ApplicationStatusTransitionService transitionService;
 
     public List<Application> getFacultyApprovedApplications() {
-        return applicationRepository.findByStatus("FacultyApproved");
+        return applicationService.getApplicationsByStatus(ApplicationStatus.FACULTY_APPROVED);
     }
 
     public Application receiveFromFaculty(Long appId) {
 
-        Application app = applicationRepository.findById(appId)
-                .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
+        Application app = applicationService.findById(appId);
 
-        app.setStatus(ApplicationStatus.SENT_TO_REGISTRAR);
-
-        return applicationRepository.save(app);
+        return transitionService.transition(
+                app,
+                ApplicationStatus.SENT_TO_REGISTRAR,
+                "Application received from faculty by registrar"
+        );
     }
 }

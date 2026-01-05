@@ -6,27 +6,23 @@ import com.utms.backend.model.entities.Evaluation;
 import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.repository.ApplicationRepository;
 import com.utms.backend.repository.EvaluationRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class EvaluationService {
 
     private final ApplicationRepository applicationRepository;
     private final EvaluationRepository evaluationRepository;
 
-    public EvaluationService(ApplicationRepository applicationRepository,
-                             EvaluationRepository evaluationRepository) {
-        this.applicationRepository = applicationRepository;
-        this.evaluationRepository = evaluationRepository;
-    }
-
     public List<Evaluation> evaluateDepartmentApplications(int quota) {
 
         List<Application> apps =
-                applicationRepository.findByStatus(ApplicationStatus.SENT_TO_DEPARTMENT.toString());
+                applicationRepository.findByStatus(ApplicationStatus.SENT_TO_DEPARTMENT);
 
         for (Application app : apps) {
 

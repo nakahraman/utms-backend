@@ -5,25 +5,18 @@ import com.utms.backend.model.entities.Evaluation;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.repository.ApplicationRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class ResultPublishService {
 
     private final ApplicationService applicationService;
     private final EvaluationService evaluationService;
     private final NotificationService notificationService;
-
-
-    public ResultPublishService(ApplicationService applicationService,
-                                EvaluationService evaluationService,
-                                NotificationService notificationService) {
-        this.applicationService = applicationService;
-        this.evaluationService = evaluationService;
-        this.notificationService = notificationService;
-    }
 
     public void publishResults() {
 

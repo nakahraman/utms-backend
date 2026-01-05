@@ -3,21 +3,17 @@ package com.utms.backend.service;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Notification;
 import com.utms.backend.repository.NotificationRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 @Service
+@AllArgsConstructor
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final EmailService emailService;
-
-    public NotificationService(NotificationRepository notificationRepository,
-                               EmailService emailService) {
-        this.notificationRepository = notificationRepository;
-        this.emailService = emailService;
-    }
 
     public void create(Application app, String type, String message) {
 

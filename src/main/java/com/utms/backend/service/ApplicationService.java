@@ -13,13 +13,16 @@ import com.utms.backend.model.enums.ValidationStatus;
 import com.utms.backend.repository.ApplicationRepository;
 import com.utms.backend.repository.DepartmentRepository;
 import com.utms.backend.repository.StudentRepository;
+import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
@@ -28,20 +31,8 @@ public class ApplicationService {
     private final ExternalVerificationClient externalClient;
     private final TransferDocumentService documentService;
     private final NotificationService notificationService;
+    private final ApplicationStatusTransitionService transitionService;
 
-    public ApplicationService(ApplicationRepository applicationRepository,
-                              StudentRepository studentRepository,
-                              DepartmentRepository departmentRepository,
-                              ExternalVerificationClient externalClient,
-                              TransferDocumentService documentService,
-                              NotificationService notificationService) {
-        this.applicationRepository = applicationRepository;
-        this.studentRepository = studentRepository;
-        this.departmentRepository = departmentRepository;
-        this.externalClient = externalClient;
-        this.documentService = documentService;
-        this.notificationService = notificationService;
-    }
 
     public Application submitApplication(Long studentId, Long departmentId) {
 
@@ -88,13 +79,12 @@ public class ApplicationService {
     }
 
     public List<Application> getApplicationsByStatus(ApplicationStatus status) {
-        return applicationRepository.findByStatus(status.name());
+        return applicationRepository.findByStatus(status);
     }
 
     public Application validateApplication(Long appId, boolean valid) {
 
-        Application app = applicationRepository.findById(appId)
-                .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
+        Application app = findById(appId);
 
         documentService.validateMandatoryDocuments(app);
 
@@ -104,7 +94,6 @@ public class ApplicationService {
             boolean hasCert =
                     documentService.hasDocument(app.getAppId(), DocumentType.ENGLISH_CERTIFICATE);
 
-            app.setStatus(ApplicationStatus.SENT_TO_YDYO);
             app.setValidationStatus(ValidationStatus.FLAGGED);
 
             String msg = hasCert
@@ -113,7 +102,8 @@ public class ApplicationService {
 
             notificationService.create(app, "ENGLISH_PREP", msg);
 
-            return applicationRepository.save(app);
+            return transitionService.transition(app, ApplicationStatus.SENT_TO_YDYO,
+                    "External student routed to YDYO");
         }
 
         // 🔵 INTERNAL öğrenci → otomatik doğrulama
@@ -123,20 +113,20 @@ public class ApplicationService {
             || !externalClient.verifyEnglishProficiency(studentNo)) {
 
             app.setValidationStatus(ValidationStatus.FLAGGED);
-            app.setStatus(ApplicationStatus.RETURNED);
-            return applicationRepository.save(app);
+            return transitionService.transition(app, ApplicationStatus.RETURNED,
+                    "Internal validation failed");
         }
 
         // 🧑‍💼 ÖİDB manuel kararı (INTERNAL)
         if (valid) {
             app.setValidationStatus(ValidationStatus.VALID);
-            app.setStatus(ApplicationStatus.VALIDATED);
+            return transitionService.transition(app, ApplicationStatus.VALIDATED,
+                    "Registrar validated internal student");
         } else {
             app.setValidationStatus(ValidationStatus.FLAGGED);
-            app.setStatus(ApplicationStatus.RETURNED);
+            return transitionService.transition(app, ApplicationStatus.RETURNED,
+                    "Registrar returned internal student");
         }
-
-        return applicationRepository.save(app);
     }
 
     public List<Application> getValidatedApplicationsForFaculty() {
@@ -147,30 +137,29 @@ public class ApplicationService {
 
     public Application sendToDepartment(Long appId) {
 
-        Application app = applicationRepository.findById(appId)
-                .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
+        Application app = findById(appId);
 
-        app.setStatus(ApplicationStatus.SENT_TO_DEPARTMENT);
-        return applicationRepository.save(app);
+        return transitionService.transition(app, ApplicationStatus.SENT_TO_DEPARTMENT, "Faculty forwarded to department");
     }
 
     @Transactional
     public void finalizeApplicationResult(Long appId, Evaluation ev) {
 
-        Application app = applicationRepository.findById(appId)
+        Application app = findById(appId);
+
+        ApplicationStatus status = decideFinalStatus(ev);
+        transitionService.transition(app, status, "Final evaluation published");
+    }
+
+    private ApplicationStatus decideFinalStatus(Evaluation ev) {
+        if ("Primary".equals(ev.getDecision())) return ApplicationStatus.APPROVED;
+        if ("Waitlisted".equals(ev.getDecision())) return ApplicationStatus.WAITLISTED;
+        return ApplicationStatus.REJECTED;
+    }
+
+    public Application findById(Long appId){
+        return applicationRepository.findById(appId)
                 .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
-
-        updateAppStatus(app, ev);  // private helper burada taşınacak
-        applicationRepository.save(app);
     }
 
-    private void updateAppStatus(Application app, Evaluation ev) {
-        if ("Primary".equals(ev.getDecision())) {
-            app.setStatus(ApplicationStatus.APPROVED);
-        } else if (ApplicationStatus.WAITLISTED.equals(ev.getDecision())) {
-            app.setStatus(ApplicationStatus.WAITLISTED);
-        } else {
-            app.setStatus(ApplicationStatus.REJECTED);
-        }
-    }
 }

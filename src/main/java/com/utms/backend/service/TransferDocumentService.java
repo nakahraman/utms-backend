@@ -7,6 +7,7 @@ import com.utms.backend.model.enums.DocumentType;
 import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.repository.ApplicationRepository;
 import com.utms.backend.repository.TransferDocumentRepository;
+import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,18 +20,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class TransferDocumentService {
 
     private final TransferDocumentRepository documentRepository;
-    private final ApplicationRepository applicationRepository;
+    private final ApplicationService applicationService;
 
     private final String uploadDir = "uploads/";
-
-    public TransferDocumentService(TransferDocumentRepository documentRepository,
-                                   ApplicationRepository applicationRepository) {
-        this.documentRepository = documentRepository;
-        this.applicationRepository = applicationRepository;
-    }
 
     private static final List<String> ALLOWED_TYPES =
             List.of("application/pdf", "image/jpeg");
@@ -47,13 +43,9 @@ public class TransferDocumentService {
             throw new BusinessException("DOC-400", "Sadece PDF veya JPEG dosyaları yüklenebilir.");
         }
 
-        Application application = applicationRepository.findById(appId)
-                .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
+        Application application = applicationService.findById(appId);
 
-        Application app = applicationRepository.findById(appId)
-                .orElseThrow(() -> new BusinessException("APP-404","Başvuru bulunamadı"));
-
-        if (app.getStudent().getStudentType() == StudentType.EXTERNAL
+        if (application.getStudent().getStudentType() == StudentType.EXTERNAL
             && file == null) {
 
             throw new BusinessException("DOC-401",

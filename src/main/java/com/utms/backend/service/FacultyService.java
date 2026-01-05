@@ -4,30 +4,33 @@ import com.utms.backend.exception.BusinessException;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.repository.ApplicationRepository;
+import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class FacultyService {
 
-    private final ApplicationRepository applicationRepository;
+    private final ApplicationService applicationService;
+    private final ApplicationStatusTransitionService transitionService;
 
-    public FacultyService(ApplicationRepository applicationRepository) {
-        this.applicationRepository = applicationRepository;
-    }
 
     public List<Application> getDeptEvaluatedApplications() {
-        return applicationRepository.findByStatus("DeptEvaluated");
+        return applicationService.getApplicationsByStatus(ApplicationStatus.DEPT_EVALUATED);
     }
 
     public Application approveFacultyDecision(Long appId) {
 
-        Application app = applicationRepository.findById(appId)
-                .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
+        Application app = applicationService.findById(appId);
 
-        app.setStatus(ApplicationStatus.FACULTY_APPROVED);
-
-        return applicationRepository.save(app);
+        return transitionService.transition(
+                app,
+                ApplicationStatus.FACULTY_APPROVED,
+                "Faculty approved application"
+        );
     }
+
 }
