@@ -21,17 +21,47 @@ public class ApplicationStatusTransitionService {
     private final ApplicationStatusHistoryRepository historyRepository;
     private final CurrentUserService currentUserService;
 
-    private static final Map<ApplicationStatus, Set<ApplicationStatus>> RULES = Map.of(
-            ApplicationStatus.VALIDATED, Set.of(ApplicationStatus.SENT_TO_DEPARTMENT),
-            ApplicationStatus.SENT_TO_DEPARTMENT, Set.of(ApplicationStatus.DEPT_EVALUATED),
-            ApplicationStatus.DEPT_EVALUATED, Set.of(ApplicationStatus.FACULTY_APPROVED),
-            ApplicationStatus.FACULTY_APPROVED, Set.of(ApplicationStatus.SENT_TO_REGISTRAR),
-            ApplicationStatus.SENT_TO_REGISTRAR, Set.of(
-                    ApplicationStatus.APPROVED,
-                    ApplicationStatus.WAITLISTED,
-                    ApplicationStatus.REJECTED
-            )
-    );
+    private static final Map<ApplicationStatus, Set<ApplicationStatus>> RULES =
+            Map.ofEntries(
+
+                    // --- SUBMIT STAGE ---
+                    Map.entry(ApplicationStatus.DRAFT,
+                            Set.of(ApplicationStatus.SUBMITTED)),
+
+                    // --- OIDB VALIDATION ---
+                    Map.entry(ApplicationStatus.SUBMITTED,
+                            Set.of(ApplicationStatus.OIDB_VALIDATED,
+                                    ApplicationStatus.SENT_TO_YDYO,
+                                    ApplicationStatus.RETURNED_TO_OIDB)),
+                    Map.entry(ApplicationStatus.SENT_TO_YDYO,
+                            Set.of(ApplicationStatus.YDYO_APPROVED,
+                                    ApplicationStatus.YDYO_EXAM_REQUIRED)),
+
+
+                    Map.entry(ApplicationStatus.YDYO_EXAM_REQUIRED,
+                            Set.of(ApplicationStatus.YDYO_APPROVED, ApplicationStatus.YDYO_FAILED)),
+
+                    Map.entry(ApplicationStatus.YDYO_APPROVED,
+                            Set.of(ApplicationStatus.OIDB_VALIDATED)),
+
+                    // --- FACULTY ---
+                    Map.entry(ApplicationStatus.OIDB_VALIDATED,
+                            Set.of(ApplicationStatus.FACULTY_EVALUATED,
+                                    ApplicationStatus.FACULTY_RETURNED)),
+
+                    // --- YGK ---
+                    Map.entry(ApplicationStatus.SENT_TO_YGK,
+                            Set.of(ApplicationStatus.APPROVED,
+                                    ApplicationStatus.WAITLISTED,
+                                    ApplicationStatus.REJECTED)),
+
+
+                    // --- TERMINAL ---
+                    Map.entry(ApplicationStatus.APPROVED, Set.of()),
+                    Map.entry(ApplicationStatus.WAITLISTED, Set.of()),
+                    Map.entry(ApplicationStatus.REJECTED, Set.of()),
+                    Map.entry(ApplicationStatus.RETURNED_TO_OIDB, Set.of(ApplicationStatus.SUBMITTED))
+            );
 
 
     public Application transition(Application app, ApplicationStatus toStatus, String reason) {

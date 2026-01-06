@@ -25,7 +25,7 @@ public class User {
     private Role role;
 
     @Column(unique = true, nullable = false)
-    private String username;
+    private String username; //
 
     @Column(nullable = false)
     private String passwordHash;

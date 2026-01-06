@@ -1,23 +1,23 @@
 package com.utms.backend.controller;
 
 import com.utms.backend.model.dto.ApplicationResponseDto;
-import com.utms.backend.model.enums.ApplicationStatus;
-import com.utms.backend.model.enums.Decision;
 import com.utms.backend.model.record.ApplicationSubmitRequest;
 import com.utms.backend.service.ApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import com.utms.backend.security.SecurityUtil;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/applications")
-@Tag(name = "Applications", description = "Student application operations")
+@RequestMapping("/student")
+@Tag(name = "Student", description = "Student APIs")
 @AllArgsConstructor
-public class ApplicationController {
+public class StudentController {
 
     private final ApplicationService applicationService;
 
@@ -35,25 +35,9 @@ public class ApplicationController {
         return applicationService.getApplicationsByStudent(studentId);
     }
 
-/*
-    @PreAuthorize("hasRole('DEPARTMENT')")
-    @GetMapping("/department/inbox")
-    @Operation(summary = "Department inbox",  description = "Department views faculty evaluated applications")
-    public List<ApplicationResponseDto> getDepartmentInbox() {
-        return applicationService.getFacultyEvaluatedApplicationsforDepartments();
+    @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/student/results")
+    public ApplicationResponseDto getMyResult() {
+        return applicationService.getMyResult();
     }
-
-    @PreAuthorize("hasRole('DEPARTMENT')")
-    @PostMapping("/department/send-to-ygk")
-    @Operation(summary = "Send to YGK", description = "Department forwards application to YGK")
-    public ApplicationResponseDto sendToYgk(@RequestParam Long appId) {
-        return applicationService.sendToYgk(appId);
-    }
-
- */
-
 }
-
-
-
-

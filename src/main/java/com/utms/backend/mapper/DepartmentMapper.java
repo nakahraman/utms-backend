@@ -15,7 +15,7 @@ public class DepartmentMapper {
         return new DepartmentResponseDto(
                 d.getDeptId(),
                 d.getDeptName(),
-                d.getCriteria(),
+                d.getCriteria().toString(),
                 f != null ? f.getFacultyId() : null,
                 f != null ? f.getFacultyName() : null
         );

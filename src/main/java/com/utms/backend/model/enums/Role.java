@@ -5,7 +5,6 @@ public enum Role {
     FACULTY,
     YGK,
     OIDB,
-    ADMIN,
-    REGISTRAR,
+
     YDYO
 }

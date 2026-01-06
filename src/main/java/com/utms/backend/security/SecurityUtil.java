@@ -34,4 +34,16 @@ public class SecurityUtil {
 
         return u.getFaculty().getFacultyId();
     }
+
+    public static Long getCurrentStudentId() {
+
+        CustomUserDetails u = currentUser();
+
+        if (u.getStudentId() == null)
+            throw new BusinessException("SEC-403",
+                    "Bu işlem sadece öğrenciler için geçerlidir.");
+
+        return u.getStudentId();
+    }
+
 }

@@ -5,11 +5,14 @@ import com.utms.backend.externalIntegration.DocumentVerificationService;
 import com.utms.backend.mapper.TransferDocumentMapper;
 import com.utms.backend.model.dto.TransferDocumentResponseDto;
 import com.utms.backend.model.entities.Application;
+import com.utms.backend.model.entities.EnglishCertificate;
 import com.utms.backend.model.entities.TransferDocument;
 import com.utms.backend.model.enums.DocumentType;
 import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.repository.ApplicationRepository;
+import com.utms.backend.repository.EnglishCertificateRepository;
 import com.utms.backend.repository.TransferDocumentRepository;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.stereotype.Service;
@@ -30,35 +33,45 @@ public class TransferDocumentService {
     private final ApplicationRepository applicationRepository;
     private final DocumentVerificationService documentVerificationService;
     private final TransferDocumentMapper transferDocumentMapper;
+    private final EnglishCertificateRepository englishCertificateRepository;
 
     private final String uploadDir = "uploads/";
 
     private static final List<String> ALLOWED_TYPES =
             List.of("application/pdf", "image/jpeg");
 
+    @Transactional
     public TransferDocumentResponseDto uploadDocument(Long appId,
                                                       DocumentType documentType,
                                                       MultipartFile file) throws Exception {
 
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException("DOC-400", "Dosya seçilmedi.");
+        }
+
         if (file.getSize() > 10 * 1024 * 1024) {
-            throw new BusinessException("DOC-413", "Dosya boyutu, izin verilen azami 10 MB sınırını aşmaktadır.");
+            throw new BusinessException("DOC-413",
+                    "Dosya boyutu, izin verilen azami 10 MB sınırını aşmaktadır.");
         }
 
         if (!ALLOWED_TYPES.contains(file.getContentType())) {
-            throw new BusinessException("DOC-400", "Sadece PDF veya JPEG dosyaları yüklenebilir.");
+            throw new BusinessException("DOC-400",
+                    "Sadece PDF veya JPEG dosyaları yüklenebilir.");
         }
 
         Application application = applicationRepository.findById(appId)
                 .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
 
-        if (application.getStudent().getStudentType() == StudentType.EXTERNAL
-            && file == null) {
-
+        // External öğrenci belge yüklemek zorundadır – zaten yukarıda garanti altına alındı
+        if (application.getStudent().getStudentType() == StudentType.EXTERNAL && file.isEmpty()) {
             throw new BusinessException("DOC-401",
                     "Dış üniversite öğrencileri belgeleri manuel yüklemek zorundadır.");
         }
 
         Files.createDirectories(Path.of(uploadDir));
+
+        // Aynı documentType tekrar yüklenirse eskisini sil
+        documentRepository.deleteByApplication_AppIdAndDocumentType(appId, documentType);
 
         String hashedName = DigestUtils.sha256Hex(
                 file.getOriginalFilename() + System.currentTimeMillis()
@@ -67,7 +80,7 @@ public class TransferDocumentService {
         File targetFile = new File(uploadDir + hashedName);
 
         if (!scanForVirus(file)) {
-            throw new RuntimeException("Yüklenen dosyada virüs tespit edildi.");
+            throw new BusinessException("DOC-406", "Yüklenen dosyada zararlı içerik tespit edildi.");
         }
 
         file.transferTo(targetFile);
@@ -97,8 +110,13 @@ public class TransferDocumentService {
                 .map(TransferDocument::getDocumentType)
                 .collect(Collectors.toSet());
 
-        // 1️⃣ Zorunlu belgeler eksik mi?
-        for (DocumentType type : DocumentType.values()) {
+        // ✅ External submit için zorunlu minimum set
+        List<DocumentType> mandatory = List.of(
+                DocumentType.TRANSCRIPT,
+                DocumentType.YKS_RESULT
+        );
+
+        for (DocumentType type : mandatory) {
             if (!uploadedTypes.contains(type)) {
                 throw new BusinessException(
                         "DOC-402",
@@ -107,8 +125,11 @@ public class TransferDocumentService {
             }
         }
 
-        // 2️⃣ Yüklenen belgeler geçerli mi? (MOCK doğrulama)
+        // ✅ Zorunlu belgelerin doğrulanması (MOCK)
         for (TransferDocument doc : docs) {
+
+            // İstersen sadece zorunluları verify et:
+            if (!mandatory.contains(doc.getDocumentType())) continue;
 
             boolean valid = documentVerificationService.verify(doc.getDocumentType(), doc);
 
@@ -120,6 +141,7 @@ public class TransferDocumentService {
             }
         }
     }
+
 
     public boolean hasDocument(Long appId, DocumentType type) {
         return documentRepository.existsByApplication_AppIdAndDocumentType(appId, type);
@@ -144,6 +166,14 @@ public class TransferDocumentService {
         } catch (Exception e) {
             throw new RuntimeException("Mock belge üretilemedi");
         }
+    }
+
+    public EnglishCertificate getEnglishCertificate(Long appId) {
+
+        return englishCertificateRepository.findByApplication_AppId(appId)
+                .orElseThrow(() ->
+                        new BusinessException("DOC-404",
+                                "English certificate not found for application"));
     }
 
 }

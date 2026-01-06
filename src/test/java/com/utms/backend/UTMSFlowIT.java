@@ -47,12 +47,12 @@ public class UTMSFlowIT {
                         .param("appId", "1"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/registrar/receive")
+        mockMvc.perform(post("/oidb/receive")
                         .with(httpBasic("oidb1", "1234"))
                         .param("appId", "1"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/registrar/publish-results")
+        mockMvc.perform(post("/oidb/publish-results")
                         .with(httpBasic("oidb1", "1234")))
                 .andExpect(status().isOk());
     }
@@ -87,12 +87,12 @@ public class UTMSFlowIT {
                         .param("appId","1"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/registrar/receive")
+        mockMvc.perform(post("/oidb/receive")
                         .with(httpBasic("oidb1","1234"))
                         .param("appId","1"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/registrar/publish-results")
+        mockMvc.perform(post("/oidb/publish-results")
                         .with(httpBasic("oidb1","1234")))
                 .andExpect(status().isOk());
     }

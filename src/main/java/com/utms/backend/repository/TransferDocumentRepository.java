@@ -11,4 +11,5 @@ public interface TransferDocumentRepository extends JpaRepository<TransferDocume
 
     boolean existsByApplication_AppIdAndDocumentType(Long appId, DocumentType documentType);
 
+    void deleteByApplication_AppIdAndDocumentType(Long appId, DocumentType documentType);
 }

@@ -3,14 +3,14 @@ package com.utms.backend.service;
 import com.utms.backend.exception.BusinessException;
 import com.utms.backend.mapper.EvaluationMapper;
 import com.utms.backend.model.dto.EvaluationResponseDto;
-import com.utms.backend.model.entities.Department;
-import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Evaluation;
+import com.utms.backend.model.enums.ApplicationStatus;
+import com.utms.backend.model.enums.Decision;
 import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.repository.EvaluationRepository;
-import com.utms.backend.security.SecurityUtil;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,47 +26,8 @@ public class EvaluationService {
     private final ApplicationStatusTransitionService transitionService;
     private final EvaluationMapper evaluationMapper;
 
-    public List<EvaluationResponseDto> evaluateDepartmentApplications(int quota) {
 
-        Long facultyId = SecurityUtil.getCurrentUserFacultyId();
-        List<Application> apps = applicationService.getDeptEvaluatedApplications(ApplicationStatus.SENT_TO_DEPARTMENT, facultyId);
-
-        for (Application app : apps) {
-
-            double transferScore;
-
-            if (app.getStudent().getStudentType() == StudentType.EXTERNAL) {
-                transferScore = calculateExternalStudentScore(app);
-            } else {
-                transferScore = calculateInternalStudentScore(app);
-            }
-
-            Evaluation ev = new Evaluation();
-            ev.setApplication(app);
-            ev.setScore(transferScore);
-            evaluationRepository.save(ev);
-        }
-
-        List<Evaluation> all = evaluationRepository.findAll();
-        all.sort(Comparator.comparing(Evaluation::getScore).reversed());
-
-        int rank = 1;
-        for (Evaluation ev : all) {
-            ev.setRank(rank++);
-            ev.setDecision(ev.getRank() <= quota ? "Primary" : "Waitlisted");
-            evaluationRepository.save(ev);
-
-            Application app = ev.getApplication();
-            transitionService.transition(app, ApplicationStatus.DEPT_EVALUATED,
-                    "External student routed to YDYO");
-        }
-
-        return all.stream()
-                .map(evaluationMapper::map)
-                .toList();
-    }
-
-    public Evaluation findApplicaitonByAppId(Long appId){
+    public Evaluation findApplicaitonByAppId(Long appId) {
         return evaluationRepository.findByApplication_AppId(appId)
                 .orElse(null);
     }
@@ -82,7 +43,6 @@ public class EvaluationService {
     }
 
 
-
     public EvaluationResponseDto getEvaluationById(Long id) {
         return evaluationRepository.findByIdWithFaculty(id)
                 .map(evaluationMapper::map)
@@ -94,5 +54,45 @@ public class EvaluationService {
                 .stream()
                 .map(evaluationMapper::map)
                 .toList();
+    }
+
+    @Transactional
+    public List<EvaluationResponseDto> evaluateApplications(List<Application> apps, int quota) {
+
+        evaluationRepository.deleteByApplicationIn(apps);
+
+        for (Application app : apps) {
+
+            double score = app.getStudent().getStudentType() == StudentType.EXTERNAL
+                    ? calculateExternalStudentScore(app)
+                    : calculateInternalStudentScore(app);
+
+            Evaluation ev = new Evaluation();
+            ev.setApplication(app);
+            ev.setScore(score);
+            evaluationRepository.save(ev);
+        }
+
+        List<Evaluation> all = evaluationRepository.findByApplicationIn(apps);
+
+        all.sort(
+                Comparator.comparing(
+                        Evaluation::getScore,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                )
+        );
+
+        int rank = 1;
+        for (Evaluation ev : all) {
+            ev.setRank(rank++);
+            ev.setDecision(ev.getRank() <= quota ? Decision.PRIMARY : Decision.WAITLISTED);
+            evaluationRepository.save(ev);
+
+            transitionService.transition(ev.getApplication(),
+                    ApplicationStatus.FACULTY_EVALUATED,
+                    "Faculty evaluated application");
+        }
+
+        return all.stream().map(evaluationMapper::map).toList();
     }
 }

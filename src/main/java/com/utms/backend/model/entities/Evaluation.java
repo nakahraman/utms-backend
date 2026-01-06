@@ -1,5 +1,6 @@
 package com.utms.backend.model.entities;
 
+import com.utms.backend.model.enums.Decision;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +31,6 @@ public class Evaluation {
 
     private Integer rank;
 
-    private String decision;
+    private Decision decision;
 }
 

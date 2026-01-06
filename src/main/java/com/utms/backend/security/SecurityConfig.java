@@ -53,7 +53,7 @@ public class SecurityConfig {
                         .requestMatchers("/applications/submit", "/applications/student/**")
                         .hasRole("STUDENT")
 
-                        .requestMatchers("/applications/oidb/**", "/registrar/**")
+                        .requestMatchers("/applications/oidb/**", "/oidb/**")
                         .hasRole("OIDB")
 
                         .requestMatchers("/faculty/**").hasRole("FACULTY")

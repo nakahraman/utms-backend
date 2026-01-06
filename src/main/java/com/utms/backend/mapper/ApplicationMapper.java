@@ -25,7 +25,8 @@ public class ApplicationMapper {
                 a.getGpa(),
                 a.getStatus(),
                 a.getValidationStatus(),
-                a.getSubmissionDate()
+                a.getSubmissionDate(),
+                a.getDecision()
         );
     }
 }

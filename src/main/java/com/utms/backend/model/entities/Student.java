@@ -34,4 +34,11 @@ public class Student {
     @Enumerated(EnumType.STRING)
     private StudentType studentType;
 
+    @OneToOne
+    @JoinColumn(name = "user_id", unique = true)
+    private User user;
+
+    @Column(unique = true, nullable = false)
+    private String username;   // std0001
+
 }

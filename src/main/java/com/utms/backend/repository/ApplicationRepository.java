@@ -2,6 +2,7 @@ package com.utms.backend.repository;
 
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.enums.ApplicationStatus;
+import com.utms.backend.model.enums.OidbStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -52,7 +53,36 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
             left join fetch d.faculty
             where a.status in :statuses
             """)
-    List<Application> findByStatusInWithRelations(@Param("statuses") List<ApplicationStatus> statuses);
+    List<Application> findByStatusInWithRelations(@Param("statuses") List<OidbStatus> statuses);
 
     boolean existsByStudent_StudentIdAndDepartment_DeptId(Long studentId, Long departmentId);
+
+    @Query("""
+                select a
+                from Application a
+                join a.student s
+                join s.department d
+                join d.faculty f
+                where a.status in :statuses
+                  and f.facultyId = :facultyId
+            """)
+    List<Application> findFacultyInbox(@Param("statuses") List<ApplicationStatus> statuses,
+                                       @Param("facultyId") Long facultyId);
+
+    @Query("""
+                SELECT a FROM Application a
+                JOIN FETCH a.student s
+                WHERE a.status = :status
+            """)
+    List<Application> findPublishedResults(@Param("status") ApplicationStatus status);
+
+    Optional<Application> findByStudentStudentIdAndStatus(Long studentId, ApplicationStatus resultPublished);
+
+    @Query("""
+                SELECT a FROM Application a
+                JOIN FETCH a.student s
+                WHERE a.status = :status
+            """)
+    List<Application> findByStatusWithStudent(@Param("status") ApplicationStatus status);
+
 }

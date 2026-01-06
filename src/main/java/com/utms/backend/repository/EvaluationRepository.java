@@ -1,5 +1,6 @@
 package com.utms.backend.repository;
 
+import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Evaluation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -30,4 +31,7 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     List<Evaluation> findAllWithFaculty();
 
 
+    List<Evaluation> findByApplicationIn(List<Application> apps);
+
+    void deleteByApplicationIn(List<Application> apps);
 }

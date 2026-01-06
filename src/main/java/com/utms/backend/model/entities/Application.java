@@ -1,6 +1,7 @@
 package com.utms.backend.model.entities;
 
 import com.utms.backend.model.enums.ApplicationStatus;
+import com.utms.backend.model.enums.Decision;
 import com.utms.backend.model.enums.ValidationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_student_target_dept",
-                        columnNames = {"student_id", "department_id"}
+                        columnNames = {"student_id", "dept_id"}
                 )
         }
 )
@@ -35,7 +36,7 @@ public class Application {
     private Student student;
 
     @ManyToOne
-    @JoinColumn(name = "department_id")
+    @JoinColumn(name = "dept_id")
     private Department department;
 
     private Double gpa;
@@ -49,6 +50,7 @@ public class Application {
     @Enumerated(EnumType.STRING)
     private ValidationStatus validationStatus;
 
-
+    @Enumerated(EnumType.STRING)
+    private Decision decision;
 }
 

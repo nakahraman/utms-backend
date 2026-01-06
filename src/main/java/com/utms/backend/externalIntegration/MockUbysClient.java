@@ -30,5 +30,6 @@ public class MockUbysClient implements ExternalUbysClient {
         // Varsayılan rol
         return Role.STUDENT;
     }
+
 }
 

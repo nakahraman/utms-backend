@@ -1,25 +1,33 @@
 package com.utms.backend.model.enums;
 public enum ApplicationStatus {
 
+    DRAFT,
     SUBMITTED,
 
     // ÖİDB doğrulama
-    VALIDATED,
+    OIDB_VALIDATED,
     RETURNED,
+    RESULT_PUBLISHED,
 
     // External student – YDYO
     SENT_TO_YDYO,
     YDYO_APPROVED,
     YDYO_FAILED,
+    YDYO_EXAM_REQUIRED,
+
+    FACULTY_RETURNED,
+    YGK_APPROVED,
+    YGK_REJECTED,
 
     // Faculty / YGK
-    SENT_TO_DEPARTMENT,
-    DEPT_EVALUATED,
-    FACULTY_APPROVED,
 
-    // ÖİDB sonuç
-    SENT_TO_REGISTRAR,
+    FACULTY_APPROVED,
+    FACULTY_EVALUATED,
+    SENT_TO_OIDB,
+    RETURNED_TO_OIDB,
     APPROVED,
     WAITLISTED,
-    REJECTED
+    REJECTED,
+    SENT_TO_YGK,
+    FINALIZED
 }

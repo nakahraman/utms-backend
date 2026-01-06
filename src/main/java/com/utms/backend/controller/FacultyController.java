@@ -1,6 +1,7 @@
 package com.utms.backend.controller;
 
 import com.utms.backend.model.dto.ApplicationResponseDto;
+import com.utms.backend.model.dto.EvaluationResponseDto;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.service.FacultyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/faculty")
-@Tag(name = "Faculty", description = "Faculty board decision APIs")
+@Tag(name = "Faculty", description = "Faculty academic evaluation APIs")
 public class FacultyController {
 
     private final FacultyService facultyService;
@@ -21,16 +22,35 @@ public class FacultyController {
     }
 
     @PreAuthorize("hasRole('FACULTY')")
-    @GetMapping("/evaluated")
-    @Operation(summary = "Get evaluated applications", description = "Faculty views department evaluated applications")
-    public List<ApplicationResponseDto> getEvaluated() {
-        return facultyService.getDeptEvaluatedApplications();
+    @GetMapping("/inbox")
+    @Operation(summary = "Faculty inbox", description = "Faculty views validated applications")
+    public List<ApplicationResponseDto> getFacultyInbox() {
+        return facultyService.getFacultyInbox();
+    }
+
+
+    @PreAuthorize("hasRole('FACULTY')")
+    @PostMapping("/evaluate")
+    @Operation(summary = "Send to YGK(department)", description = "Faculty forwards application to YGK(department)")
+    public List<EvaluationResponseDto> evaluate(@RequestParam int quota) {
+        return facultyService.evaluateFacultyApplications(quota);
     }
 
     @PreAuthorize("hasRole('FACULTY')")
-    @PostMapping("/approve")
-    @Operation(summary = "Approve application", description = "Faculty board approves evaluated application")
-    public ApplicationResponseDto approve(@RequestParam Long appId) {
-        return facultyService.approveFacultyDecision(appId);
+    @PostMapping("/return")
+    public ApplicationResponseDto returnToOidb(@RequestParam Long appId,
+                                               @RequestParam String reason) {
+        return facultyService.returnToOidb(appId, reason);
     }
+
+
+    /*
+    @PostMapping("/send-to-ygk")
+    @Operation(summary = "Send to YGK(department)", description = "Faculty forwards application to YGK(department)")
+    public ApplicationResponseDto sendToYGK(@RequestParam Long appId,
+                                            @RequestParam boolean valid) {
+        return facultyService.evaluateFaculty(appId, valid);
+    }
+
+ */
 }
