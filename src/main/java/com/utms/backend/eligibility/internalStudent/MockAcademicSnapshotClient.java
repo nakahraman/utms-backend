@@ -13,8 +13,8 @@ public class MockAcademicSnapshotClient implements ExternalAcademicSnapshotClien
         s.setCompletedSemesters(4);
         s.setHasLeaveSemester(false);
         s.setHasFailedCourse(false);
-        s.setGpa(2.25);
-        s.setSuccessRank(180000);
+        s.setGpa(3.25);
+        s.setSuccessRank(18000);
         s.setTargetSemester(5);
         s.setHasPortfolio(true);
 

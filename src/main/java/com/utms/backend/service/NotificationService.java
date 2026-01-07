@@ -34,7 +34,6 @@ public class NotificationService {
     private String resolveSubject(String type) {
         return switch (type) {
             case "SUBMIT"        -> "İYTE Yatay Geçiş Başvurunuz Alındı";
-            case "ENGLISH_PREP"  -> "YDYO İngilizce Hazırlık Süreci";
             case "RESULT"        -> "İYTE Yatay Geçiş Başvuru Sonucu";
             default              -> "İYTE Başvuru Bilgilendirme";
         };

@@ -23,7 +23,7 @@ public class EvaluationMapper {
         return new EvaluationResponseDto(
                 e.getEvalId(),
                 e.getApplication().getAppId(),
-                e.getDecision().toString(),
+                e.getDecision() != null ? e.getDecision().name() : null,
                 null, // dateSent yok, DTO'dan çıkar ya da buraya ekle
                 f != null ? f.getFacultyId() : null,
                 f != null ? f.getFacultyName() : null

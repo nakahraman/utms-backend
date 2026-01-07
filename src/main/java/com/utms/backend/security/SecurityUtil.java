@@ -19,7 +19,7 @@ public class SecurityUtil {
         Object principal = auth.getPrincipal();
 
         if (!(principal instanceof CustomUserDetails))
-            throw new BusinessException("SEC-401", "Geçersiz kullanıcı oturumu.");
+            throw new BusinessException("SEC-402", "Geçersiz kullanıcı oturumu.");
 
         return (CustomUserDetails) principal;
     }
@@ -44,6 +44,12 @@ public class SecurityUtil {
                     "Bu işlem sadece öğrenciler için geçerlidir.");
 
         return u.getStudentId();
+    }
+
+    public static Long getCurrentUserId() {
+
+        return currentUser().getUserId();
+
     }
 
 }

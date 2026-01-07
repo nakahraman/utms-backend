@@ -38,6 +38,8 @@ public class ApplicationService {
     private final AcademicEligibilityEvaluator eligibilityEvaluator;
     private final ExternalEligibilityExtractor externalEligibilityExtractor;
     private final EnglishScoreService englishScoreService;
+    private final EvaluationService evaluationService;
+    private final EligibilityFlowService eligibilityFlowService;
 
 
     @Transactional
@@ -74,7 +76,7 @@ public class ApplicationService {
         return applicationRepository.save(app);
     }
 
-    @Transactional(noRollbackFor = BusinessException.class)
+    @Transactional
     private void handleInternalStudentFlow(Application app, Department department) {
 
         AcademicEligibilitySnapshot snapshot =
@@ -89,13 +91,10 @@ public class ApplicationService {
 
             transitionService.transition(app, ApplicationStatus.CRITERIA_REJECTED,
                     "Internal academic criteria not met");
-
-            throw new BusinessException("ELIG-001",
-                    "Başvuru kriterleri karşılanmadığı için başvurunuz reddedildi.");
+        } else {
+            transitionService.transition(app, ApplicationStatus.SUBMITTED,
+                    "Internal academic eligibility passed");
         }
-
-        transitionService.transition(app, ApplicationStatus.SUBMITTED,
-                "Internal academic eligibility passed");
     }
 
     @Transactional(noRollbackFor = BusinessException.class)
@@ -171,7 +170,7 @@ public class ApplicationService {
     }
 
     @Transactional
-    public ApplicationResponseDto validateApplication(Long appId, boolean valid) {
+    public ApplicationResponseDto oidbValidateApplication(Long appId, boolean valid) {
 
         Application app = findApplicationById(appId);
 
@@ -267,13 +266,23 @@ public class ApplicationService {
                 .orElseThrow(() -> new BusinessException("APP-404", "Application not found"));
 
         if (app.getStatus() != ApplicationStatus.SENT_TO_YGK) {
-            throw new BusinessException("YGK-405", "Only applications sent to YGK can be finalized");
+            throw new BusinessException("YGK-405",
+                    "Only applications sent to YGK can be finalized");
         }
 
+        Evaluation ev = evaluationService
+                .findEvaluationByApplicationId(app.getAppId());
+
+
+        ev.setDecision(decision);
+        ev.setYgkMemberId(SecurityUtil.getCurrentUserId());
+        evaluationService.save(ev);
 
         ApplicationStatus target =
                 decision == Decision.REJECTED
                         ? ApplicationStatus.YGK_REJECTED
+                        : decision == Decision.WAITLISTED
+                        ? ApplicationStatus.WAITLISTED
                         : ApplicationStatus.YGK_APPROVED;
 
         Application updated = transitionService.transition(

@@ -38,7 +38,7 @@ public class OidbController {
     @Operation(summary = "Validate application", description = "Oidb validates application")
     public ApplicationResponseDto validate(@RequestParam Long appId,
                                            @RequestParam boolean valid) {
-        return oidbService.validateApplication(appId, valid);
+        return oidbService.oidbValidateApplication(appId, valid);
     }
 
     @PreAuthorize("hasRole('OIDB')")

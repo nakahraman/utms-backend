@@ -31,6 +31,8 @@ public class Evaluation {
 
     private Integer rank;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "decision")
     private Decision decision;
 }
 

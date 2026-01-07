@@ -7,9 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import com.utms.backend.security.SecurityUtil;
 
 import java.util.List;
 
@@ -20,6 +18,7 @@ import java.util.List;
 public class StudentController {
 
     private final ApplicationService applicationService;
+
 
     @PreAuthorize("hasRole('STUDENT')")
     @PostMapping("/submit")

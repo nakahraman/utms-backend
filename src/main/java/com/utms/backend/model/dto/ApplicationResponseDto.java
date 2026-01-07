@@ -3,13 +3,14 @@ package com.utms.backend.model.dto;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.enums.Decision;
 import com.utms.backend.model.enums.ValidationStatus;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
+@RequiredArgsConstructor
+@ToString
 public class ApplicationResponseDto {
 
     private Long appId;

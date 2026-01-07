@@ -6,7 +6,6 @@ import com.utms.backend.model.dto.EvaluationResponseDto;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Evaluation;
 import com.utms.backend.model.enums.ApplicationStatus;
-import com.utms.backend.model.enums.Decision;
 import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.repository.EvaluationRepository;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
@@ -21,16 +20,10 @@ import java.util.List;
 @AllArgsConstructor
 public class EvaluationService {
 
-    private final ApplicationService applicationService;
     private final EvaluationRepository evaluationRepository;
     private final ApplicationStatusTransitionService transitionService;
     private final EvaluationMapper evaluationMapper;
 
-
-    public Evaluation findApplicaitonByAppId(Long appId) {
-        return evaluationRepository.findByApplication_AppId(appId)
-                .orElse(null);
-    }
 
     // INTERNAL öğrenci – otomatik skor
     private double calculateInternalStudentScore(Application app) {
@@ -46,6 +39,16 @@ public class EvaluationService {
     public EvaluationResponseDto getEvaluationById(Long id) {
         return evaluationRepository.findByIdWithFaculty(id)
                 .map(evaluationMapper::map)
+                .orElseThrow(() -> new BusinessException("EVL-404", "Evaluation bulunamadı"));
+    }
+
+
+    public void save(Evaluation ev) {
+        evaluationRepository.save(ev);
+    }
+
+    public Evaluation findEvaluationByApplicationId(Long id) {
+        return evaluationRepository.findByApplication_AppId(id)
                 .orElseThrow(() -> new BusinessException("EVL-404", "Evaluation bulunamadı"));
     }
 
@@ -85,7 +88,7 @@ public class EvaluationService {
         int rank = 1;
         for (Evaluation ev : all) {
             ev.setRank(rank++);
-            ev.setDecision(ev.getRank() <= quota ? Decision.PRIMARY : Decision.WAITLISTED);
+            ev.setDecision(null);
             evaluationRepository.save(ev);
 
             transitionService.transition(ev.getApplication(),

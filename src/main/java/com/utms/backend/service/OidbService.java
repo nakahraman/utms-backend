@@ -24,8 +24,8 @@ public class OidbService {
         return applicationService.getOidbInbox(statuses);
     }
 
-    public ApplicationResponseDto validateApplication(Long appId, boolean valid) {
-        return applicationService.validateApplication(appId, valid);
+    public ApplicationResponseDto oidbValidateApplication(Long appId, boolean valid) {
+        return applicationService.oidbValidateApplication(appId, valid);
     }
 
     @Transactional
@@ -70,7 +70,7 @@ public class OidbService {
         Application app = applicationService.findApplicationById(appId);
 
         if (app.getStatus() != ApplicationStatus.FACULTY_RETURNED)
-            throw new BusinessException("OIDB-403",
+            throw new BusinessException("OIDB-406",
                     "Only faculty returned apps can be resent");
 
         Application updated = transitionService.transition(

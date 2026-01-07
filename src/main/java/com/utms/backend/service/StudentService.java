@@ -14,19 +14,11 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final ApplicationService applicationService;
 
-    public ApplicationResponseDto getMyResult() {
-
-        Long studentId = SecurityUtil.getCurrentStudentId();
-
-        return applicationService.getMyResult();
-    }
-
 
     public Long getStudentIdByUserId(Long userId) {
         return studentRepository.findByUserUserId(userId)
                 .map(Student::getStudentId)
                 .orElseThrow(() -> new BusinessException("STU-404", "Student not found"));
     }
-
 
 }
