@@ -3,6 +3,7 @@ package com.utms.backend.model.enums;
 public enum OidbStatus {
 
     SUBMITTED,
+    CRITERIA_REJECTED,
     YDYO_APPROVED,
     YDYO_FAILED,
     FACULTY_EVALUATED,

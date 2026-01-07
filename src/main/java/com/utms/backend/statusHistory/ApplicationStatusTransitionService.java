@@ -6,6 +6,7 @@ import com.utms.backend.exception.BusinessException;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.repository.ApplicationRepository;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +27,8 @@ public class ApplicationStatusTransitionService {
 
                     // --- SUBMIT STAGE ---
                     Map.entry(ApplicationStatus.DRAFT,
-                            Set.of(ApplicationStatus.SUBMITTED)),
+                            Set.of(ApplicationStatus.SUBMITTED,
+                                    ApplicationStatus.CRITERIA_REJECTED)),
 
                     // --- OIDB VALIDATION ---
                     Map.entry(ApplicationStatus.SUBMITTED,
@@ -45,6 +47,9 @@ public class ApplicationStatusTransitionService {
                     Map.entry(ApplicationStatus.YDYO_APPROVED,
                             Set.of(ApplicationStatus.OIDB_VALIDATED,
                                     ApplicationStatus.OIDB_REJECTED)),
+
+                    Map.entry(ApplicationStatus.CRITERIA_REJECTED,
+                            Set.of(ApplicationStatus.OIDB_REJECTED)),
 
                     Map.entry(ApplicationStatus.YDYO_FAILED,
                             Set.of(ApplicationStatus.OIDB_REJECTED)),
@@ -80,6 +85,7 @@ public class ApplicationStatusTransitionService {
             );
 
 
+    @Transactional
     public Application transition(Application app, ApplicationStatus toStatus, String reason) {
 
         ApplicationStatus fromStatus = app.getStatus();

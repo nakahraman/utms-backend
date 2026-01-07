@@ -82,4 +82,9 @@ public class OidbService {
         return applicationMapper.map(updated);
     }
 
+
+    public List<ApplicationResponseDto> getFinalizedResults(Boolean published) {
+
+        return applicationService.getFinalizedResults(published);
+    }
 }

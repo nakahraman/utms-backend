@@ -56,13 +56,6 @@ public class OidbController {
     }
 
     @PreAuthorize("hasRole('OIDB')")
-    @GetMapping("/results")
-    @Operation(summary = "View published results", description = "OIDB views all published application results")
-    public List<ApplicationResponseDto> getResults() {
-        return applicationService.getPublishedResults();
-    }
-
-    @PreAuthorize("hasRole('OIDB')")
     @PostMapping("/send-to-ydyo")
     @Operation(summary = "Send to YDYO",
             description = "OIDB forwards application to YDYO for language assessment")
@@ -74,6 +67,14 @@ public class OidbController {
     @PostMapping("/resend-to-faculty")
     public ApplicationResponseDto resendToFaculty(@RequestParam Long appId) {
         return oidbService.resendToFaculty(appId);
+    }
+
+    @PreAuthorize("hasRole('OIDB')")
+    @GetMapping("/results")
+    @Operation(summary = "View finalized and/or published application results")
+    public List<ApplicationResponseDto> getFinalizedResults(
+            @RequestParam(required = false) Boolean published) {
+        return oidbService.getFinalizedResults(published);
     }
 
 }

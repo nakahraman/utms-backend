@@ -52,5 +52,9 @@ public class Application {
 
     @Enumerated(EnumType.STRING)
     private Decision decision;
+
+    @Column(name = "is_published")
+    private boolean published;
+
 }
 

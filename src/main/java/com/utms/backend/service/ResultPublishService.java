@@ -29,9 +29,8 @@ public class ResultPublishService {
     @Transactional
     public void publishResults() {
 
-        List<Application> apps = applicationService.findBYStatusIn(List.of(
-                ApplicationStatus.YGK_APPROVED,
-                ApplicationStatus.YGK_REJECTED));
+        List<Application> apps =
+                applicationService.findFinalResults();
 
         if (apps.isEmpty()) {
             throw new BusinessException("RES-404", "Yayınlanacak sonuç bulunamadı.");
@@ -39,18 +38,17 @@ public class ResultPublishService {
 
         for (Application app : apps) {
 
-            Application updated = transitionService.transition(
-                    app,
-                    ApplicationStatus.RESULT_PUBLISHED,
-                    "Final results published by OIDB"
-            );
+            if (app.isPublished()) continue;
+
+            app.setPublished(true);
 
             String message =
-                    updated.getDecision() == Decision.REJECTED ? "Başvurunuz reddedilmiştir." :
-                            updated.getDecision() == Decision.PRIMARY ? "Başvurunuz kabul edilmiştir (Asıl)." :
-                                    "Başvurunuz yedek listesine alınmıştır.";
+                    app.getStatus() == ApplicationStatus.OIDB_REJECTED ? "Başvurunuz OIBD tarafından reddedilmiştir." :
+                            app.getStatus() == ApplicationStatus.YGK_APPROVED ? "Başvurunuz kabul edilmiştir (Asıl)." :
+                                    app.getStatus() == ApplicationStatus.WAITLISTED ? "Başvurunuz yedek listesine alınmıştır." :
+                                            "Başvurunuz YGK tarafından reddedilmiştir.";
 
-            notificationService.create(updated, NotificationType.RESULT.toString(), message);
+            notificationService.create(app, NotificationType.RESULT.toString(), message);
         }
     }
 }

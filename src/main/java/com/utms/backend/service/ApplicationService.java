@@ -15,9 +15,9 @@ import com.utms.backend.repository.DepartmentRepository;
 import com.utms.backend.repository.StudentRepository;
 import com.utms.backend.security.SecurityUtil;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -61,7 +61,7 @@ public class ApplicationService {
         return applicationMapper.map(app);
     }
 
-
+    @Transactional
     private Application createDraftApplication(Student student, Department department) {
 
         Application app = new Application();
@@ -74,6 +74,7 @@ public class ApplicationService {
         return applicationRepository.save(app);
     }
 
+    @Transactional(noRollbackFor = BusinessException.class)
     private void handleInternalStudentFlow(Application app, Department department) {
 
         AcademicEligibilitySnapshot snapshot =
@@ -86,10 +87,10 @@ public class ApplicationService {
 
         if (!eligibilityEvaluator.isEligible(snapshot, criteria)) {
 
-            transitionService.transition(app, ApplicationStatus.REJECTED,
+            transitionService.transition(app, ApplicationStatus.CRITERIA_REJECTED,
                     "Internal academic criteria not met");
 
-            throw new BusinessException("APP-ELIG-001",
+            throw new BusinessException("ELIG-001",
                     "Başvuru kriterleri karşılanmadığı için başvurunuz reddedildi.");
         }
 
@@ -97,6 +98,7 @@ public class ApplicationService {
                 "Internal academic eligibility passed");
     }
 
+    @Transactional(noRollbackFor = BusinessException.class)
     private void handleExternalStudentFlow(Application app, Department department) {
 
         // Zorunlu belgeler: TRANSCRIPT + YKS_RESULT
@@ -109,16 +111,17 @@ public class ApplicationService {
 
         if (!eligibilityEvaluator.isEligible(snapshot, criteria)) {
 
-            transitionService.transition(app, ApplicationStatus.REJECTED,
+            transitionService.transition(app, ApplicationStatus.CRITERIA_REJECTED,
                     "External academic criteria not met");
 
-            throw new BusinessException("APP-ELIG-EXT-001",
+            throw new BusinessException("ELIG-EXT-001",
                     "Yüklenen belgeler bölüm kriterlerini karşılamadığı için başvurunuz reddedildi.");
+
         }
 
         // ❗ İngilizce belgesi burada KONTROL EDİLMEZ
         transitionService.transition(app, ApplicationStatus.SUBMITTED,
-                "External academic eligibility passed");
+                "Academic eligibility passed");
     }
 
 
@@ -160,22 +163,11 @@ public class ApplicationService {
                 .toList();
     }
 
-    public List<ApplicationResponseDto> getFacultyEvaluatedApplicationsforDepartments() {
-        return applicationRepository.findByStatus(ApplicationStatus.SENT_TO_YGK)
-                .stream()
-                .map(applicationMapper::map)
-                .toList();
-    }
-
     public List<ApplicationResponseDto> getFacEvaluatedApplicationsForYgk(ApplicationStatus status) {
         return applicationRepository.findByStatus(status)
                 .stream()
                 .map(applicationMapper::map)
                 .toList();
-    }
-
-    public List<Application> getApplicationsByStatusAndFaculty(List<ApplicationStatus> statuses, Long facultyId) {
-        return applicationRepository.findFacultyInbox(statuses, facultyId);
     }
 
     @Transactional
@@ -189,6 +181,20 @@ public class ApplicationService {
 
             throw new BusinessException("OIDB-403",
                     "Only applications evaluated by YDYO can be validated by OIDB");
+        }
+
+        // ❌ Akademik kriter reddi
+        if (app.getStatus() == ApplicationStatus.CRITERIA_REJECTED) {
+
+            app.setValidationStatus(ValidationStatus.FLAGGED);
+
+            return applicationMapper.map(
+                    transitionService.transition(
+                            app,
+                            ApplicationStatus.OIDB_REJECTED,
+                            "Application rejected by OIDB due to academic ineligibility"
+                    )
+            );
         }
 
         // ❌ YDYO'dan kalan otomatik reddedilir
@@ -286,6 +292,7 @@ public class ApplicationService {
                 (statuses == null || statuses.isEmpty())
                         ? List.of(
                         OidbStatus.SUBMITTED,
+                        OidbStatus.CRITERIA_REJECTED,
                         OidbStatus.YDYO_APPROVED,
                         OidbStatus.YDYO_FAILED,
                         OidbStatus.FACULTY_EVALUATED,
@@ -421,6 +428,35 @@ public class ApplicationService {
         return applicationMapper.map(
                 transitionService.transition(app, target, reason)
         );
+    }
+
+    public List<ApplicationResponseDto> getFinalizedResults(Boolean published) {
+
+        List<ApplicationStatus> terminalStatuses = List.of(
+                ApplicationStatus.OIDB_REJECTED,
+                ApplicationStatus.YGK_APPROVED,
+                ApplicationStatus.YGK_REJECTED,
+                ApplicationStatus.WAITLISTED
+        );
+
+        return applicationRepository
+                .findFinalResultsFiltered(terminalStatuses, published)
+                .stream()
+                .map(applicationMapper::map)
+                .toList();
+    }
+
+    public List<Application> findFinalResults() {
+
+        List<ApplicationStatus> terminalStatuses = List.of(
+                ApplicationStatus.OIDB_REJECTED,
+                ApplicationStatus.YGK_APPROVED,
+                ApplicationStatus.YGK_REJECTED,
+                ApplicationStatus.WAITLISTED
+        );
+
+        return applicationRepository
+                .findFinalResults(terminalStatuses);
     }
 
 }

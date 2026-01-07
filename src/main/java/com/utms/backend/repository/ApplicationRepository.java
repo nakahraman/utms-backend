@@ -28,14 +28,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
             """)
     List<Application> findAllByStudentWithRelations(Long studentId);
 
-    @Query("""
-            select a from Application a
-            left join fetch a.student
-            left join fetch a.department d
-            left join fetch d.faculty
-            where a.status = 'VALIDATED'
-            """)
-    List<Application> findValidatedWithRelations();
 
     @Query("""
             select a from Application a
@@ -55,6 +47,23 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
             """)
     List<Application> findByStatusInWithRelations(@Param("statuses") List<OidbStatus> statuses);
 
+    @Query("""
+            select a from Application a
+            join fetch a.student
+            join fetch a.department
+            where a.status in :statuses
+            """)
+    List<Application> findFinalResults(@Param("statuses") List<ApplicationStatus> statuses);
+
+    @Query("""
+            select a from Application a
+            join fetch a.student
+            join fetch a.department
+            where a.status in :statuses
+            and (:published is null or a.published = :published)
+            """)
+    List<Application> findFinalResultsFiltered(@Param("statuses") List<ApplicationStatus> statuses,
+                                       @Param("published") Boolean published);
     boolean existsByStudent_StudentIdAndDepartment_DeptId(Long studentId, Long departmentId);
 
     @Query("""
@@ -69,12 +78,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     List<Application> findFacultyInbox(@Param("statuses") List<ApplicationStatus> statuses,
                                        @Param("facultyId") Long facultyId);
 
-    @Query("""
-                SELECT a FROM Application a
-                JOIN FETCH a.student s
-                WHERE a.status = :status
-            """)
-    List<Application> findPublishedResults(@Param("status") ApplicationStatus status);
 
     Optional<Application> findByStudentStudentIdAndStatus(Long studentId, ApplicationStatus resultPublished);
 
@@ -84,5 +87,8 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
                 WHERE a.status = :status
             """)
     List<Application> findByStatusWithStudent(@Param("status") ApplicationStatus status);
+
+
+
 
 }
