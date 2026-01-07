@@ -9,7 +9,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class EvaluationResponseDto {
 
-    private Long id;
+    private Long evaluationId;
+    private Long applicationId;
+
     private String message;
     private LocalDateTime dateSent;
 

@@ -41,7 +41,7 @@ public class FacultyService {
         Application app = applicationService.findApplicationById(appId);
 
         if (app.getStatus() != ApplicationStatus.SENT_TO_YGK)
-            throw new BusinessException("YGK-401","Sadece bölüm değerlendirmesi bekleyen başvurular YGK'ya gönderilebilir.");
+            throw new BusinessException("YGK-401","Only applications awaiting department evaluation can be forwarded to the YGK.");
 
         ApplicationStatus nextStatus = valid
                 ? ApplicationStatus.SENT_TO_YGK

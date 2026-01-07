@@ -30,37 +30,53 @@ public class ApplicationStatusTransitionService {
 
                     // --- OIDB VALIDATION ---
                     Map.entry(ApplicationStatus.SUBMITTED,
-                            Set.of(ApplicationStatus.OIDB_VALIDATED,
-                                    ApplicationStatus.SENT_TO_YDYO,
-                                    ApplicationStatus.RETURNED_TO_OIDB)),
+                            Set.of(ApplicationStatus.SENT_TO_YDYO)),
+
+
                     Map.entry(ApplicationStatus.SENT_TO_YDYO,
                             Set.of(ApplicationStatus.YDYO_APPROVED,
                                     ApplicationStatus.YDYO_EXAM_REQUIRED)),
 
 
                     Map.entry(ApplicationStatus.YDYO_EXAM_REQUIRED,
-                            Set.of(ApplicationStatus.YDYO_APPROVED, ApplicationStatus.YDYO_FAILED)),
+                            Set.of(ApplicationStatus.YDYO_APPROVED,
+                                    ApplicationStatus.YDYO_FAILED)),
 
                     Map.entry(ApplicationStatus.YDYO_APPROVED,
-                            Set.of(ApplicationStatus.OIDB_VALIDATED)),
+                            Set.of(ApplicationStatus.OIDB_VALIDATED,
+                                    ApplicationStatus.OIDB_REJECTED)),
+
+                    Map.entry(ApplicationStatus.YDYO_FAILED,
+                            Set.of(ApplicationStatus.OIDB_REJECTED)),
 
                     // --- FACULTY ---
                     Map.entry(ApplicationStatus.OIDB_VALIDATED,
                             Set.of(ApplicationStatus.FACULTY_EVALUATED,
                                     ApplicationStatus.FACULTY_RETURNED)),
 
+
+                    Map.entry(ApplicationStatus.FACULTY_EVALUATED,
+                            Set.of(ApplicationStatus.SENT_TO_YGK)),
+
+
+                    // --- RETURN FLOW ---
+                    Map.entry(ApplicationStatus.FACULTY_RETURNED,
+                            Set.of(ApplicationStatus.OIDB_VALIDATED)),
+
+
                     // --- YGK ---
                     Map.entry(ApplicationStatus.SENT_TO_YGK,
-                            Set.of(ApplicationStatus.APPROVED,
+                            Set.of(ApplicationStatus.YGK_APPROVED,
                                     ApplicationStatus.WAITLISTED,
-                                    ApplicationStatus.REJECTED)),
+                                    ApplicationStatus.YGK_REJECTED)),
 
 
                     // --- TERMINAL ---
-                    Map.entry(ApplicationStatus.APPROVED, Set.of()),
+                    Map.entry(ApplicationStatus.OIDB_REJECTED, Set.of()),
+                    Map.entry(ApplicationStatus.YGK_APPROVED, Set.of()),
                     Map.entry(ApplicationStatus.WAITLISTED, Set.of()),
-                    Map.entry(ApplicationStatus.REJECTED, Set.of()),
-                    Map.entry(ApplicationStatus.RETURNED_TO_OIDB, Set.of(ApplicationStatus.SUBMITTED))
+                    Map.entry(ApplicationStatus.YGK_REJECTED, Set.of())
+
             );
 
 

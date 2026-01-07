@@ -6,6 +6,7 @@ public enum ApplicationStatus {
 
     // ÖİDB doğrulama
     OIDB_VALIDATED,
+    OIDB_REJECTED,
     RETURNED,
     RESULT_PUBLISHED,
 
@@ -20,14 +21,9 @@ public enum ApplicationStatus {
     YGK_REJECTED,
 
     // Faculty / YGK
-
-    FACULTY_APPROVED,
     FACULTY_EVALUATED,
-    SENT_TO_OIDB,
     RETURNED_TO_OIDB,
-    APPROVED,
     WAITLISTED,
     REJECTED,
     SENT_TO_YGK,
-    FINALIZED
 }

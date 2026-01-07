@@ -2,7 +2,6 @@ package com.utms.backend.controller;
 
 import com.utms.backend.model.dto.ApplicationResponseDto;
 import com.utms.backend.model.dto.EvaluationResponseDto;
-import com.utms.backend.model.entities.Application;
 import com.utms.backend.service.FacultyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

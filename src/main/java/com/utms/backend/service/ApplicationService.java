@@ -198,7 +198,7 @@ public class ApplicationService {
 
             Application updated = transitionService.transition(
                     app,
-                    ApplicationStatus.REJECTED,
+                    ApplicationStatus.OIDB_REJECTED,
                     "Application rejected due to YDYO failure"
             );
 
@@ -214,7 +214,7 @@ public class ApplicationService {
 
             Application updated = transitionService.transition(
                     app,
-                    ApplicationStatus.REJECTED,
+                    ApplicationStatus.OIDB_REJECTED,
                     "OIDB rejected application after YDYO approval"
             );
 
@@ -261,14 +261,14 @@ public class ApplicationService {
                 .orElseThrow(() -> new BusinessException("APP-404", "Application not found"));
 
         if (app.getStatus() != ApplicationStatus.SENT_TO_YGK) {
-            throw new BusinessException("YGK-405", "Application is not ready for YGK decision");
+            throw new BusinessException("YGK-405", "Only applications sent to YGK can be finalized");
         }
 
 
         ApplicationStatus target =
                 decision == Decision.REJECTED
-                        ? ApplicationStatus.REJECTED
-                        : ApplicationStatus.APPROVED;
+                        ? ApplicationStatus.YGK_REJECTED
+                        : ApplicationStatus.YGK_APPROVED;
 
         Application updated = transitionService.transition(
                 app,
@@ -298,12 +298,6 @@ public class ApplicationService {
                 .stream()
                 .map(applicationMapper::map)
                 .toList();
-    }
-
-    private ApplicationStatus decideFinalStatus(Evaluation ev) {
-        if ("Primary".equals(ev.getDecision())) return ApplicationStatus.APPROVED;
-        if ("Waitlisted".equals(ev.getDecision())) return ApplicationStatus.WAITLISTED;
-        return ApplicationStatus.REJECTED;
     }
 
     public Application findApplicationById(Long appId) {
