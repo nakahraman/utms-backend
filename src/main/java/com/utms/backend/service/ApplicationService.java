@@ -3,15 +3,14 @@ package com.utms.backend.service;
 import com.utms.backend.eligibility.externalStudent.ExternalEligibilityExtractor;
 import com.utms.backend.eligibility.internalStudent.AcademicEligibilityEvaluator;
 import com.utms.backend.eligibility.internalStudent.ExternalAcademicSnapshotClient;
+import com.utms.backend.eligibility.internalStudent.InternalEligibilityExtractor;
 import com.utms.backend.exception.BusinessException;
-import com.utms.backend.externalIntegration.ExternalVerificationClient;
 import com.utms.backend.mapper.ApplicationMapper;
 import com.utms.backend.model.dto.ApplicationResponseDto;
 import com.utms.backend.model.dto.DepartmentCriteriaDto;
 import com.utms.backend.model.entities.*;
 import com.utms.backend.model.enums.*;
 import com.utms.backend.repository.ApplicationRepository;
-import com.utms.backend.repository.StudentRepository;
 import com.utms.backend.security.SecurityUtil;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
 import lombok.AllArgsConstructor;
@@ -26,9 +25,7 @@ import java.util.List;
 public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
-    private final StudentRepository studentRepository;
     private final DepartmentService departmentService;
-    private final ExternalVerificationClient externalClient;
     private final TransferDocumentService documentService;
     private final NotificationService notificationService;
     private final ApplicationStatusTransitionService transitionService;
@@ -36,6 +33,7 @@ public class ApplicationService {
     private final ExternalAcademicSnapshotClient academicSnapshotClient;
     private final AcademicEligibilityEvaluator eligibilityEvaluator;
     private final ExternalEligibilityExtractor externalEligibilityExtractor;
+    private final InternalEligibilityExtractor internalEligibilityExtractor;
     private final EnglishScoreService englishScoreService;
     private final EvaluationService evaluationService;
     private final StudentService studentService;
@@ -45,25 +43,19 @@ public class ApplicationService {
 
 
     // ---------- DRAFT ----------
-
     @Transactional
-    public Long createExternalDraft(Long userId, Long departmentId) {
+    public Long createDraft(Long userId, Long departmentId) {
 
-        Student student = studentService.getOrCreateStudent(userId);
+        Student student = studentService.resolveStudent(userId);
         Department dept = departmentService.findDepartmentById(departmentId);
-
-        Application app = createDraft(student, dept);
-        return app.getAppId();
-    }
-
-    private Application createDraft(Student student, Department department) {
 
         Application app = new Application();
         app.setStudent(student);
-        app.setDepartment(department);
+        app.setDepartment(dept);
         app.setSubmissionDate(LocalDateTime.now());
         app.setStatus(ApplicationStatus.DRAFT);
-        return applicationRepository.save(app);
+
+        return applicationRepository.save(app).getAppId();
     }
 
 
@@ -74,17 +66,14 @@ public class ApplicationService {
 
         Application app = authorizeAndLoadDraft(appId);
 
-        checkCanSubmit(app);
+        checkCanSubmit(app.getStudent().getStudentId(), app.getDepartment().getDeptId());
 
         documentService.validateMandatoryDocuments(app);
 
-        AcademicEligibilitySnapshot snapshot = externalEligibilityExtractor.extract(app);
-
-        validateEligibilityOrReject(app, snapshot);
-
-        finalizeSubmission(app);
+        finalizeSubmission(app, "External application submitted");
 
         sendSubmitNotification(app);
+
         return applicationMapper.map(app);
     }
 
@@ -106,36 +95,26 @@ public class ApplicationService {
     // ---------- INTERNAL SUBMIT ----------
 
     @Transactional
-    public ApplicationResponseDto submitInternalApplication(Long userId, Long departmentId) {
+    public ApplicationResponseDto submitInternalApplication(Long userId, Long appId) {
 
         Student student = studentService.findStudentIdByUserId(userId)
                 .orElseThrow(() ->
                         new BusinessException("STU-404",
-                                "Bu kullanıcıya ait öğrenci profili bulunamadı"));;
+                                "Bu kullanıcıya ait öğrenci profili bulunamadı"));
 
-        Department dept = departmentService.findDepartmentById(departmentId);
+        Application app = authorizeAndLoadDraft(appId);
 
-        checkCanSubmit(student.getStudentId(), dept.getDeptId());
+        checkCanSubmit(student.getStudentId(), app.getDepartment().getDeptId());
 
-        Application app = createDraft(student, dept);
-
-        AcademicEligibilitySnapshot snapshot = academicSnapshotClient.fetchSnapshot(student.getStudentId().toString(), dept.getDeptId());
-
-        if (!eligibilityEvaluator.isEligible(snapshot, dept.getCriteria().toDto())) {
-            transitionService.transition(app, ApplicationStatus.CRITERIA_REJECTED, "Internal academic criteria not met");
-        } else {
-            transitionService.transition(app, ApplicationStatus.SUBMITTED, "Internal academic eligibility passed");
-        }
+        finalizeSubmission(app, "Internal application submitted");
 
         sendSubmitNotification(app);
+
         return applicationMapper.map(app);
     }
 
-    // ---------- DOMAIN RULES ----------
 
-    private void checkCanSubmit(Application app) {
-        checkCanSubmit(app.getStudent().getStudentId(), app.getDepartment().getDeptId());
-    }
+    // ---------- DOMAIN RULES ----------
 
     private void checkCanSubmit(Long studentId, Long deptId) {
 
@@ -151,35 +130,21 @@ public class ApplicationService {
 
         if (!eligibilityEvaluator.isEligible(snapshot, criteria)) {
 
-            transitionService.transition(app, ApplicationStatus.CRITERIA_REJECTED, "External academic criteria not met");
+            transitionService.transition(app, ApplicationStatus.OIDB_CRITERIA_REJECTED, "External academic criteria not met");
 
             throw new BusinessException("ELIG-EXT-001", "Bölüm kriterleri sağlanamadı");
         }
     }
 
-    private void finalizeSubmission(Application app) {
+    private void finalizeSubmission(Application app, String reason) {
 
-        transitionService.transition(app, ApplicationStatus.SUBMITTED, "External application submitted");
+        transitionService.transition(app, ApplicationStatus.SUBMITTED, reason);
     }
 
     private void sendSubmitNotification(Application app) {
 
-        notificationService.create(app, "SUBMIT", "Yatay geçiş başvurunuz başarıyla alınmıştır. Başvuru No: " + app.getAppId());
-    }
-
-    @Transactional
-    private Application createDraftApplication(Student student, Department department) {
-
-        checkDuplicate(student.getStudentId(), department.getDeptId());
-
-        Application app = new Application();
-        app.setStudent(student);
-        app.setDepartment(department);
-        app.setGpa(student.getGpa());
-        app.setSubmissionDate(LocalDateTime.now());
-        app.setStatus(ApplicationStatus.DRAFT);
-
-        return applicationRepository.save(app);
+        notificationService.create(app, ApplicationStatus.SUBMITTED.toString(),
+                "Yatay geçiş başvurunuz başarıyla alınmıştır. Başvuru No: " + app.getAppId());
     }
 
     @Transactional
@@ -195,23 +160,11 @@ public class ApplicationService {
 
         if (!eligibilityEvaluator.isEligible(snapshot, criteria)) {
 
-            transitionService.transition(app, ApplicationStatus.CRITERIA_REJECTED,
+            transitionService.transition(app, ApplicationStatus.OIDB_CRITERIA_REJECTED,
                     "Internal academic criteria not met");
         } else {
             transitionService.transition(app, ApplicationStatus.SUBMITTED,
                     "Internal academic eligibility passed");
-        }
-    }
-
-
-
-    private Department findDepartment(Long id) {
-        return departmentService.findDepartmentById(id);
-    }
-
-    private void checkDuplicate(Long studentId, Long departmentId) {
-        if (applicationRepository.existsByStudent_StudentIdAndDepartment_DeptId(studentId, departmentId)) {
-            throw new BusinessException("APP-409", "Bu bölüme daha önce başvuru yaptınız.");
         }
     }
 
@@ -236,51 +189,52 @@ public class ApplicationService {
                 .map(applicationMapper::map)
                 .toList();
     }
-
     @Transactional
     public ApplicationResponseDto oidbValidateApplication(Long appId, boolean valid) {
 
         Application app = findApplicationById(appId);
 
-        // 🔒 OIDB yalnızca YDYO sonucu gelmiş başvurularla çalışır
-        if (app.getStatus() != ApplicationStatus.YDYO_APPROVED &&
-            app.getStatus() != ApplicationStatus.YDYO_FAILED) {
-
-            throw new BusinessException("OIDB-403",
-                    "Only applications evaluated by YDYO can be validated by OIDB");
+        // 🔒 Sadece SUBMITTED durumundaki başvurular işlenir
+        if (app.getStatus() != ApplicationStatus.SUBMITTED) {
+            throw new BusinessException("OIDB-401",
+                    "Only submitted applications can be validated by OIDB");
         }
 
-        // ❌ Akademik kriter reddi
-        if (app.getStatus() == ApplicationStatus.CRITERIA_REJECTED) {
+        // 1️⃣ Belgeler eksik mi?
+        documentService.validateMandatoryDocuments(app);
 
-            app.setValidationStatus(ValidationStatus.FLAGGED);
+        AcademicEligibilitySnapshot snapshot;
 
-            return applicationMapper.map(
-                    transitionService.transition(
-                            app,
-                            ApplicationStatus.OIDB_REJECTED,
-                            "Application rejected by OIDB due to academic ineligibility"
-                    )
-            );
+        // 2️⃣ Akademik uygunluk hesapla (EXTERNAL öğrenci için)
+
+
+        if (app.getStudent().getStudentType() == StudentType.EXTERNAL) {
+            snapshot = externalEligibilityExtractor.extract(app);
+        } else {
+            snapshot = internalEligibilityExtractor.extract(app);
         }
 
-        // ❌ YDYO'dan kalan otomatik reddedilir
-        if (app.getStatus() == ApplicationStatus.YDYO_FAILED) {
+        DepartmentCriteriaDto criteria =
+                app.getDepartment().getCriteria().toDto();
+
+        boolean eligible =
+                eligibilityEvaluator.isEligible(snapshot, criteria);
+
+        if (!eligible) {
 
             app.setValidationStatus(ValidationStatus.FLAGGED);
 
             Application updated = transitionService.transition(
                     app,
-                    ApplicationStatus.OIDB_REJECTED,
-                    "Application rejected due to YDYO failure"
+                    ApplicationStatus.OIDB_CRITERIA_REJECTED,
+                    "OIDB rejected due to academic criteria mismatch"
             );
 
             return applicationMapper.map(updated);
         }
 
-        // ✅ Buraya gelen herkes YDYO_APPROVED
-        documentService.validateMandatoryDocuments(app);
 
+        // 3️⃣ OIDB kullanıcı reddi
         if (!valid) {
 
             app.setValidationStatus(ValidationStatus.FLAGGED);
@@ -288,44 +242,24 @@ public class ApplicationService {
             Application updated = transitionService.transition(
                     app,
                     ApplicationStatus.OIDB_REJECTED,
-                    "OIDB rejected application after YDYO approval"
+                    "OIDB manually rejected application"
             );
 
             return applicationMapper.map(updated);
         }
 
-        // 🎯 OIDB ONAYI
+        // 4️⃣ Kriterler OK → YDYO’ya gönder
         app.setValidationStatus(ValidationStatus.VALID);
 
         Application updated = transitionService.transition(
                 app,
-                ApplicationStatus.OIDB_VALIDATED,
-                "OIDB validated application after YDYO approval"
+                ApplicationStatus.SENT_TO_YDYO,
+                "OIDB validated academic eligibility and forwarded to YDYO"
         );
 
         return applicationMapper.map(updated);
     }
 
-    @Transactional
-    public ApplicationResponseDto sendToYgk(Long appId, boolean valid) {
-
-        Application app = findApplicationById(appId);
-
-        if (app.getStatus() != ApplicationStatus.SENT_TO_YGK)
-            throw new BusinessException("YGK-401","Sadece bölüm değerlendirmesi bekleyen başvurular YGK'ya gönderilebilir.");
-
-        ApplicationStatus nextStatus = valid
-                ? ApplicationStatus.SENT_TO_YGK
-                : ApplicationStatus.RETURNED_TO_OIDB;
-
-        String reason = valid
-                ? "Department approved and forwarded to YGK"
-                : "Department rejected and returned to OIDB";
-
-        Application updated = transitionService.transition(app, nextStatus, reason);
-
-        return applicationMapper.map(updated);
-    }
 
     @Transactional
     public ApplicationResponseDto finalizeApplication(Long appId, Decision decision) {
@@ -369,7 +303,7 @@ public class ApplicationService {
                 (statuses == null || statuses.isEmpty())
                         ? List.of(
                         OidbStatus.SUBMITTED,
-                        OidbStatus.CRITERIA_REJECTED,
+                        OidbStatus.OIDB_CRITERIA_REJECTED,
                         OidbStatus.YDYO_APPROVED,
                         OidbStatus.YDYO_FAILED,
                         OidbStatus.FACULTY_EVALUATED,
@@ -390,14 +324,6 @@ public class ApplicationService {
     }
 
     public List<Application> getDeptEvaluatedApplications(ApplicationStatus status, Long facultyId) {
-        return applicationRepository
-                .findByStatusAndDepartment_Faculty_FacultyId(
-                        status,
-                        facultyId
-                );
-    }
-
-    public List<Application> getDeptEvApplications(ApplicationStatus status, Long facultyId) {
         return applicationRepository
                 .findByStatusAndDepartment_Faculty_FacultyId(
                         status,

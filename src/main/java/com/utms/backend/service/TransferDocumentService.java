@@ -16,6 +16,7 @@ import jakarta.transaction.SystemException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.DocumentDocument;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -30,9 +31,12 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+
+import javax.swing.text.Document;
 import java.nio.file.Paths;
 import java.util.Objects;
 
@@ -213,5 +217,12 @@ public class TransferDocumentService {
             throw new BusinessException("SYS-500","File download failed.");
         }
     }
+
+    public Optional<TransferDocument> findDocument(Long appId, DocumentType documentType) {
+
+        return documentRepository
+                .findByApplication_AppIdAndDocumentType(appId, documentType);
+    }
+
 
 }

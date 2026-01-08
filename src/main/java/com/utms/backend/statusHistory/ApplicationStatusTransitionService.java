@@ -27,19 +27,18 @@ public class ApplicationStatusTransitionService {
 
                     // --- SUBMIT STAGE ---
                     Map.entry(ApplicationStatus.DRAFT,
-                            Set.of(ApplicationStatus.SUBMITTED,
-                                    ApplicationStatus.CRITERIA_REJECTED)),
+                            Set.of(ApplicationStatus.SUBMITTED)),
 
                     // --- OIDB VALIDATION ---
                     Map.entry(ApplicationStatus.SUBMITTED,
-                            Set.of(ApplicationStatus.SENT_TO_YDYO)),
-
-
+                            Set.of(ApplicationStatus.SENT_TO_YDYO,
+                                    ApplicationStatus.OIDB_CRITERIA_REJECTED)),
+                    
                     Map.entry(ApplicationStatus.SENT_TO_YDYO,
                             Set.of(ApplicationStatus.YDYO_APPROVED,
                                     ApplicationStatus.YDYO_EXAM_REQUIRED)),
 
-
+                    // --- YDYO ---
                     Map.entry(ApplicationStatus.YDYO_EXAM_REQUIRED,
                             Set.of(ApplicationStatus.YDYO_APPROVED,
                                     ApplicationStatus.YDYO_FAILED)),
@@ -47,9 +46,6 @@ public class ApplicationStatusTransitionService {
                     Map.entry(ApplicationStatus.YDYO_APPROVED,
                             Set.of(ApplicationStatus.OIDB_VALIDATED,
                                     ApplicationStatus.OIDB_REJECTED)),
-
-                    Map.entry(ApplicationStatus.CRITERIA_REJECTED,
-                            Set.of(ApplicationStatus.OIDB_REJECTED)),
 
                     Map.entry(ApplicationStatus.YDYO_FAILED,
                             Set.of(ApplicationStatus.OIDB_REJECTED)),
@@ -78,8 +74,8 @@ public class ApplicationStatusTransitionService {
 
                     // --- TERMINAL ---
                     Map.entry(ApplicationStatus.OIDB_REJECTED, Set.of()),
+                    Map.entry(ApplicationStatus.OIDB_CRITERIA_REJECTED, Set.of()),
                     Map.entry(ApplicationStatus.YGK_APPROVED, Set.of()),
-                    Map.entry(ApplicationStatus.WAITLISTED, Set.of()),
                     Map.entry(ApplicationStatus.YGK_REJECTED, Set.of())
 
             );

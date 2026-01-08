@@ -21,27 +21,27 @@ public class StudentController {
     private final ApplicationService applicationService;
 
 
-    @PostMapping("/ext-draft")
+    @PostMapping("/draft")
     @PreAuthorize("hasRole('STUDENT')")
     public Long createDraft(@RequestParam Long departmentId) {
         Long currentUserId = SecurityUtil.getCurrentUserId();
-        return applicationService.createExternalDraft(currentUserId, departmentId);
+        return applicationService.createDraft(currentUserId, departmentId);
     }
 
-    @PostMapping("/ext-submit/{appId}")
     @PreAuthorize("hasRole('STUDENT')")
+    @PostMapping("/ext-submit/{appId}")
+    @Operation(summary = "Submit external application", description = "External student submits new transfer application")
     public ApplicationResponseDto submitExternal(@PathVariable Long appId) {
         return applicationService.submitExternalApplication(appId);
     }
 
-
     @PreAuthorize("hasRole('STUDENT')")
-    @PostMapping("/submit")
+    @PostMapping("/submit/{appId}")
     @Operation(summary = "Submit application", description = "Student submits new transfer application")
-    public ApplicationResponseDto submit(@RequestBody ApplicationSubmitRequest request) {
+    public ApplicationResponseDto submit(@PathVariable Long appId) {
 
         Long userId = SecurityUtil.getCurrentUserId();
-        return applicationService.submitInternalApplication(userId, request.departmentId());
+        return applicationService.submitInternalApplication(userId, appId);
     }
 
     @PreAuthorize("hasRole('STUDENT')")

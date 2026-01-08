@@ -7,7 +7,7 @@ public enum ApplicationStatus {
     // ÖİDB doğrulama
     OIDB_VALIDATED,
     OIDB_REJECTED,
-    CRITERIA_REJECTED,
+    OIDB_CRITERIA_REJECTED,
     RESULT_PUBLISHED,
 
     // External student – YDYO
