@@ -39,7 +39,6 @@ public class ApplicationService {
     private final ExternalEligibilityExtractor externalEligibilityExtractor;
     private final EnglishScoreService englishScoreService;
     private final EvaluationService evaluationService;
-    private final EligibilityFlowService eligibilityFlowService;
 
 
     @Transactional

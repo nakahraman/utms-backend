@@ -20,47 +20,43 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
+    private final StudentService studentService;
     private final ExternalUbysClient externalUbysClient;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    @Transactional
     public String login(String username, String password) {
 
-        // 🔐 UBYS mock authentication
-        if (!externalUbysClient.authenticate(username, password)) {
-            throw new BusinessException("AUTH-401", "UBYS doğrulama başarısız");
-        }
-
-        Role role = externalUbysClient.fetchRole(username);
-
-        // 🔄 İlk girişte User oluştur
         User user = userRepository.findByUsername(username)
-                .orElseGet(() -> userRepository.save(
-                        User.builder()
-                                .username(username)
-                                .passwordHash(passwordEncoder.encode(password))
-                                .role(role)
-                                .userSource(UserSource.UBYS)
-                                .build()
-                ));
+                .orElseThrow(() -> new BusinessException("AUTH-404", "Kullanıcı bulunamadı"));
 
-        // 🔗 STUDENT → USER bağlama
-        if (role == Role.STUDENT) {
+        if (user.getUserSource() == UserSource.UBYS) {
 
-            Student student = studentRepository.findByUsername(username)
-                    .orElseThrow(() ->
-                            new BusinessException("STU-404", "Student kaydı bulunamadı"));
+            if (!externalUbysClient.authenticate(username, password)) {
+                throw new BusinessException("AUTH-401", "UBYS doğrulama başarısız");
+            }
 
-            if (student.getUser() == null) {
-                student.setUser(user);
-                studentRepository.save(student);
+        } else { // EXTERNAL kullanıcı
+
+            if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+                throw new BusinessException("AUTH-401", "Şifre hatalı");
             }
         }
 
-        // 🎫 JWT üret
+        // 🔗 STUDENT → USER ilişkisinin DB'de varlığını garanti et
+        if (user.getRole() == Role.STUDENT
+            && user.getUserSource() == UserSource.UBYS) {
+
+            studentService.findStudentIdByUserId(user.getUserId())
+                    .orElseThrow(() -> new BusinessException(
+                            "STU-500",
+                            "Bu UBYS öğrencisine ait sistemde Student kaydı bulunmuyor. "
+                            + "OIDB tarafından kayıt oluşturulmalıdır."
+                    ));
+        }
         return jwtService.generateToken(user);
     }
+
 
     @Transactional
     public User registerExternalStudent(String username, String password) {
