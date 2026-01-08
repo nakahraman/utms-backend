@@ -25,7 +25,7 @@ public class NotificationService {
         notificationRepository.save(notif);
 
         emailService.sendSafe(
-                app.getStudent().getEmail(),
+                app.getStudent().getUser().getEmail(),
                 resolveSubject(type),
                 message
         );

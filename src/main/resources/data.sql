@@ -34,15 +34,20 @@ VALUES
 -- USERS
 -------------------------------------------------------
 INSERT INTO users
-(user_id, role, username, password_hash, faculty_id, user_source)
+(user_id, role, username, password_hash, faculty_id, user_source, email, name)
 VALUES
-(1, 'STUDENT', 'std1', '$2a$10$hashstudent1', NULL, 'UBYS'),
-(2, 'FACULTY', 'fac1', '$2a$10$hashfaculty1', 1,    'UBYS'),
-(3, 'YGK',     'ygk1',     '$2a$10$hashygk1',      1,    'UBYS'),
-(4, 'YDYO',    'ydyo1',    '$2a$10$hashydyo1',     NULL, 'UBYS'),
-(5, 'OIDB',    'oidb1',    '$2a$10$hashoidb1',     NULL, 'UBYS'),
-(6, 'FACULTY', 'fac2', '$2a$10$hashfaculty2', 2,    'UBYS'),
-(7, 'YGK',     'ygk2',     '$2a$10$hashygk2',      3,    'UBYS');
+(1, 'STUDENT', 'std1', '$2a$10$hashstudent1', NULL, 'UBYS', 'std1@iyte.edu.tr', 'Ali Veli'),
+(2, 'STUDENT', 'std2', '$2a$10$hashstudent2', NULL, 'UBYS', 'std2@iyte.edu.tr', 'Ayşe Demir'),
+(3, 'STUDENT', 'std3', '$2a$10$hashstudent3', NULL, 'EXTERNAL', 'std3@gmail.com', 'Mehmet Yılmaz'),
+(4, 'STUDENT', 'std4', '$2a$10$hashstudent4', NULL, 'UBYS', 'std4@iyte.edu.tr', 'Zeynep Kaya'),
+
+(5, 'FACULTY', 'fac1', '$2a$10$hashfaculty1', 1, 'UBYS', 'fac1@iyte.edu.tr', 'Dr. Ali Kaya'),
+(6, 'FACULTY', 'fac2', '$2a$10$hashfaculty2', 2, 'UBYS', 'fac2@iyte.edu.tr', 'Dr. Ayşe Yıldız'),
+(7, 'YGK',     'ygk1', '$2a$10$hashygk1',     1, 'UBYS', 'ygk1@iyte.edu.tr', 'Prof. Mehmet Demir'),
+(8, 'YGK',     'ygk2', '$2a$10$hashygk2',     3, 'UBYS', 'ygk2@iyte.edu.tr', 'Prof. Zeynep Akın'),
+(9, 'YDYO',    'ydyo1','$2a$10$hashydyo1',    NULL,'UBYS', 'ydyo1@iyte.edu.tr', 'Öğr. Gör. Hasan Can'),
+(10,'OIDB',    'oidb1','$2a$10$hashoidb1',    NULL,'UBYS', 'oidb1@iyte.edu.tr', 'Murat Ersoy');
+
 
 -------------------------------------------------------
 -- DEPARTMENT ALLOWED SEMESTERS
@@ -58,12 +63,13 @@ INSERT INTO department_allowed_semesters (dept_id, semester) VALUES
 -------------------------------------------------------
 -- STUDENTS
 INSERT INTO students
-(student_id, username, name, dept_id, gpa, exam_score, email, student_type, user_id)
+(student_id, dept_id, gpa, exam_score, student_type, user_id)
 VALUES
-(1, 'std1', 'Ali Veli',      1, 3.05, 78.0, 'ali@iyte.edu.tr',   'INTERNAL', 1),
-(2, 'std2', 'Ayşe Demir',    2, 3.40, 85.0, 'ayse@iyte.edu.tr',  'INTERNAL', 2),
-(3, 'std3', 'Mehmet Yılmaz', 3, 2.95, 72.0, 'mehmet@iyte.edu.tr','EXTERNAL', 3),
-(4, 'std4', 'Zeynep Kaya',   5, 3.60, 90.0, 'zeynep@iyte.edu.tr','INTERNAL', 4);
+(1, 1, 3.05, 78.0, 'INTERNAL', 1),
+(2, 2, 3.40, 85.0, 'INTERNAL', 2),
+(3, 3, 2.95, 72.0, 'EXTERNAL', 3),
+(4, 5, 3.60, 90.0, 'INTERNAL', 4);
+
 
 
 

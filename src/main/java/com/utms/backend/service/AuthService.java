@@ -5,7 +5,9 @@ import com.utms.backend.externalIntegration.ExternalUbysClient;
 import com.utms.backend.model.entities.Student;
 import com.utms.backend.model.entities.User;
 import com.utms.backend.model.enums.Role;
+import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.model.enums.UserSource;
+import com.utms.backend.model.record.RegisterRequest;
 import com.utms.backend.repository.StudentRepository;
 import com.utms.backend.repository.UserRepository;
 import com.utms.backend.security.JwtService;
@@ -59,18 +61,20 @@ public class AuthService {
 
 
     @Transactional
-    public User registerExternalStudent(String username, String password) {
+    public User registerExternalStudent(RegisterRequest req) {
 
-        if (userRepository.findByUsername(username).isPresent())
+        if (userRepository.findByUsername(req.username()).isPresent())
             throw new BusinessException("USR-409", "Bu kullanıcı adı zaten kullanılıyor");
 
         User user = User.builder()
-                .username(username)
-                .passwordHash(passwordEncoder.encode(password))
+                .username(req.username())
+                .passwordHash(passwordEncoder.encode(req.password()))
+                .email(req.email())
+                .name(req.name())
                 .role(Role.STUDENT)
                 .userSource(UserSource.EXTERNAL)
                 .build();
 
-        return userRepository.save(user);
+        return userRepository.save(user);   //  önce User persist
     }
 }

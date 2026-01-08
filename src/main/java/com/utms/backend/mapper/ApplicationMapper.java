@@ -9,7 +9,6 @@ public class ApplicationMapper {
 
     public ApplicationResponseDto map(Application a) {
 
-        String studentName = a.getStudent() != null ? a.getStudent().getName() : null;
         String departmentName = a.getDepartment() != null ? a.getDepartment().getDeptName() : null;
 
         String facultyName = null;
@@ -19,7 +18,6 @@ public class ApplicationMapper {
 
         return new ApplicationResponseDto(
                 a.getAppId(),
-                studentName,
                 departmentName,
                 facultyName,
                 a.getGpa(),

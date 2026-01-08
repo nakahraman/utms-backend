@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
+
 @RestController
 @RequestMapping("/auth")
 @Tag(name = "Authentication", description = "Login and registration APIs")
@@ -31,7 +33,7 @@ public class AuthController {
     // SADECE external öğrenci buradan kayıt olur
     @PostMapping("/register-external")
     @Operation(summary = "Register external student", description = "External students register via UTMS")
-    public User registerExternal(@RequestBody RegisterRequest req) {
-        return authService.registerExternalStudent(req.username(), req.password());
+    public User registerExternal(@Valid @RequestBody RegisterRequest req) {
+        return authService.registerExternalStudent(req);
     }
 }

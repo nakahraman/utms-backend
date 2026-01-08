@@ -39,28 +39,27 @@ public class ApplicationService {
     private final ExternalEligibilityExtractor externalEligibilityExtractor;
     private final EnglishScoreService englishScoreService;
     private final EvaluationService evaluationService;
+    private final StudentService studentService;
 
 
     @Transactional
-    public ApplicationResponseDto submitApplication(Long studentId, Long departmentId) {
+    public ApplicationResponseDto submitApplication(Long userId, Long departmentId) {
 
-        Student student = findStudent(studentId);
+        Student student = studentService.getOrCreateStudent(userId);
         Department department = findDepartment(departmentId);
-        checkDuplicate(studentId, departmentId);
+        checkDuplicate(student.getStudentId(), departmentId);
 
         Application app = createDraftApplication(student, department);
 
-        if (student.getStudentType() == StudentType.INTERNAL) {
+        if (student.getStudentType() == StudentType.INTERNAL)
             handleInternalStudentFlow(app, department);
-        }
-
-        if (student.getStudentType() == StudentType.EXTERNAL) {
+        else
             handleExternalStudentFlow(app, department);
-        }
 
         sendSubmitNotification(app);
         return applicationMapper.map(app);
     }
+
 
     @Transactional
     private Application createDraftApplication(Student student, Department department) {

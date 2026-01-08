@@ -2,6 +2,7 @@ package com.utms.backend.controller;
 
 import com.utms.backend.model.dto.ApplicationResponseDto;
 import com.utms.backend.model.record.ApplicationSubmitRequest;
+import com.utms.backend.security.SecurityUtil;
 import com.utms.backend.service.ApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,7 +25,9 @@ public class StudentController {
     @PostMapping("/submit")
     @Operation(summary = "Submit application", description = "Student submits new transfer application")
     public ApplicationResponseDto submit(@RequestBody ApplicationSubmitRequest request) {
-        return applicationService.submitApplication(request.studentId(), request.departmentId());
+
+        Long userId = SecurityUtil.getCurrentUserId();
+        return applicationService.submitApplication(userId, request.departmentId());
     }
 
     @PreAuthorize("hasRole('STUDENT')")

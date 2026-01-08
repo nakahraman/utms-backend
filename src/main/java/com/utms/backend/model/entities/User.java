@@ -38,5 +38,10 @@ public class User {
     @Column(nullable = false)
     private UserSource userSource; // UBYS or EXTERNAL
 
+    @Column(unique = true, nullable = false)
+    private String email; //
+
+    @Column(nullable = false)
+    private String name;
 
 }

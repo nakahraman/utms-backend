@@ -1,6 +1,7 @@
 package com.utms.backend.model.entities;
 
 import com.utms.backend.model.enums.StudentType;
+import com.utms.backend.model.enums.UserSource;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,8 +20,6 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long studentId;
 
-    private String name;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dept_id")
     private Department department;
@@ -29,16 +28,10 @@ public class Student {
 
     private Double examScore;
 
-    private String email;
-
     @Enumerated(EnumType.STRING)
     private StudentType studentType;
 
     @OneToOne
     @JoinColumn(name = "user_id", unique = true)
     private User user;
-
-    @Column(unique = true, nullable = false)
-    private String username;   // std0001
-
 }

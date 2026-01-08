@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 public class ApplicationResponseDto {
 
     private Long appId;
-    private String studentName;
     private String departmentName;
     private String facultyName;
     private Double gpa;
