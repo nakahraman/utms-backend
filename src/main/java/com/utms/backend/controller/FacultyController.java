@@ -23,7 +23,7 @@ public class FacultyController {
 
     @PreAuthorize("hasRole('FACULTY')")
     @GetMapping("/inbox")
-    @Operation(summary = "Faculty inbox", description = "Faculty views validated applications")
+    @Operation(summary = "Faculty inbox", description = "Faculty views oidb validated applications")
     public List<ApplicationResponseDto> getFacultyInbox() {
         return facultyService.getFacultyInbox();
     }

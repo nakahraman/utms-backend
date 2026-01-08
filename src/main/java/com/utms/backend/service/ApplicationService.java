@@ -147,27 +147,6 @@ public class ApplicationService {
                 "Yatay geçiş başvurunuz başarıyla alınmıştır. Başvuru No: " + app.getAppId());
     }
 
-    @Transactional
-    private void handleInternalStudentFlow(Application app, Department department) {
-
-        AcademicEligibilitySnapshot snapshot =
-                academicSnapshotClient.fetchSnapshot(
-                        app.getStudent().getStudentId().toString(),
-                        department.getDeptId()
-                );
-
-        DepartmentCriteriaDto criteria = department.getCriteria().toDto();
-
-        if (!eligibilityEvaluator.isEligible(snapshot, criteria)) {
-
-            transitionService.transition(app, ApplicationStatus.OIDB_CRITERIA_REJECTED,
-                    "Internal academic criteria not met");
-        } else {
-            transitionService.transition(app, ApplicationStatus.SUBMITTED,
-                    "Internal academic eligibility passed");
-        }
-    }
-
 
     public List<ApplicationResponseDto> getApplicationsByStudent(Long studentId) {
         return applicationRepository.findAllByStudentWithRelations(studentId)
@@ -194,21 +173,21 @@ public class ApplicationService {
 
         Application app = findApplicationById(appId);
 
-        // 🔒 Sadece SUBMITTED durumundaki başvurular işlenir
-        if (app.getStatus() != ApplicationStatus.SUBMITTED) {
-            throw new BusinessException("OIDB-401",
-                    "Only submitted applications can be validated by OIDB");
+        // 🔒 OIDB yalnızca YDYO sonucu gelmiş başvurularla çalışır
+        if (app.getStatus() != ApplicationStatus.YDYO_APPROVED &&
+            app.getStatus() != ApplicationStatus.YDYO_FAILED) {
+
+            throw new BusinessException("OIDB-403",
+                    "Only applications evaluated by YDYO can be validated by OIDB");
         }
 
         // 1️⃣ Belgeler eksik mi?
-        documentService.validateMandatoryDocuments(app);
+
 
         AcademicEligibilitySnapshot snapshot;
 
-        // 2️⃣ Akademik uygunluk hesapla (EXTERNAL öğrenci için)
-
-
         if (app.getStudent().getStudentType() == StudentType.EXTERNAL) {
+            documentService.validateMandatoryDocuments(app);
             snapshot = externalEligibilityExtractor.extract(app);
         } else {
             snapshot = internalEligibilityExtractor.extract(app);
@@ -253,8 +232,8 @@ public class ApplicationService {
 
         Application updated = transitionService.transition(
                 app,
-                ApplicationStatus.SENT_TO_YDYO,
-                "OIDB validated academic eligibility and forwarded to YDYO"
+                ApplicationStatus.OIDB_VALIDATED,
+                "OIDB validated application after YDYO approval and sent to faculty"
         );
 
         return applicationMapper.map(updated);
