@@ -3,6 +3,7 @@ package com.utms.backend.service;
 import com.utms.backend.exception.BusinessException;
 import com.utms.backend.mapper.DepartmentMapper;
 import com.utms.backend.model.dto.DepartmentResponseDto;
+import com.utms.backend.model.entities.Department;
 import com.utms.backend.repository.DepartmentRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,5 +30,11 @@ public class DepartmentService {
                 .orElseThrow(() ->
                         new BusinessException("DPT-404", "Bölüm bulunamadı: " + id));
     }
+
+    public Department findDepartmentById(Long id) {
+        return departmentRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("DPT-404", "Bölüm bulunamadı."));
+    }
+
 }
 

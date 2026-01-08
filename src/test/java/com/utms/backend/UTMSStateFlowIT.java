@@ -58,7 +58,7 @@ public class UTMSStateFlowIT {
 
     private void submitApplication(ApplicationStatus expected) throws Exception {
 
-        ApplicationSubmitRequest req = new ApplicationSubmitRequest(1L,1L);
+        ApplicationSubmitRequest req = new ApplicationSubmitRequest(1L);
 
         mockMvc.perform(post("/student/submit")
                         .with(user("std1").roles("STUDENT"))

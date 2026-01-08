@@ -40,7 +40,7 @@ public class StudentFlowIT {
     private void submitApplication() throws Exception {
 
         ApplicationSubmitRequest request =
-                new ApplicationSubmitRequest(1L, 1L);
+                new ApplicationSubmitRequest( 1L);
 
         mockMvc.perform(post("/student/submit")
                         .with(user("std1").roles("STUDENT"))

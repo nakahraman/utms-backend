@@ -32,6 +32,7 @@ public class StudentService {
         return studentRepository.findByUserUserId(userId);
     }
 
+
     @Transactional
     public Student getOrCreateStudent(Long userId) {
 

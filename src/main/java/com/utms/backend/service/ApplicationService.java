@@ -11,7 +11,6 @@ import com.utms.backend.model.dto.DepartmentCriteriaDto;
 import com.utms.backend.model.entities.*;
 import com.utms.backend.model.enums.*;
 import com.utms.backend.repository.ApplicationRepository;
-import com.utms.backend.repository.DepartmentRepository;
 import com.utms.backend.repository.StudentRepository;
 import com.utms.backend.security.SecurityUtil;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
@@ -28,7 +27,7 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final StudentRepository studentRepository;
-    private final DepartmentRepository departmentRepository;
+    private final DepartmentService departmentService;
     private final ExternalVerificationClient externalClient;
     private final TransferDocumentService documentService;
     private final NotificationService notificationService;
@@ -40,29 +39,138 @@ public class ApplicationService {
     private final EnglishScoreService englishScoreService;
     private final EvaluationService evaluationService;
     private final StudentService studentService;
+    private final UserService userService;
 
+    private final List<ApplicationStatus> ALLOWED_FOR_NEW_APPLICATION = List.of(ApplicationStatus.DRAFT);
+
+
+    // ---------- DRAFT ----------
 
     @Transactional
-    public ApplicationResponseDto submitApplication(Long userId, Long departmentId) {
+    public Long createExternalDraft(Long userId, Long departmentId) {
 
         Student student = studentService.getOrCreateStudent(userId);
-        Department department = findDepartment(departmentId);
-        checkDuplicate(student.getStudentId(), departmentId);
+        Department dept = departmentService.findDepartmentById(departmentId);
 
-        Application app = createDraftApplication(student, department);
+        Application app = createDraft(student, dept);
+        return app.getAppId();
+    }
 
-        if (student.getStudentType() == StudentType.INTERNAL)
-            handleInternalStudentFlow(app, department);
-        else
-            handleExternalStudentFlow(app, department);
+    private Application createDraft(Student student, Department department) {
+
+        Application app = new Application();
+        app.setStudent(student);
+        app.setDepartment(department);
+        app.setSubmissionDate(LocalDateTime.now());
+        app.setStatus(ApplicationStatus.DRAFT);
+        return applicationRepository.save(app);
+    }
+
+
+    // ---------- EXTERNAL SUBMIT ----------
+
+    @Transactional
+    public ApplicationResponseDto submitExternalApplication(Long appId) {
+
+        Application app = authorizeAndLoadDraft(appId);
+
+        checkCanSubmit(app);
+
+        documentService.validateMandatoryDocuments(app);
+
+        AcademicEligibilitySnapshot snapshot = externalEligibilityExtractor.extract(app);
+
+        validateEligibilityOrReject(app, snapshot);
+
+        finalizeSubmission(app);
 
         sendSubmitNotification(app);
         return applicationMapper.map(app);
     }
 
+    private Application authorizeAndLoadDraft(Long appId) {
+
+        Long userId = SecurityUtil.getCurrentUserId();
+        Application app = findApplicationById(appId);
+
+        if (!app.getStudent().getUser().getUserId().equals(userId))
+            throw new BusinessException("SEC-403", "Bu başvuru size ait değil");
+
+        if (app.getStatus() != ApplicationStatus.DRAFT)
+            throw new BusinessException("APP-400", "Sadece taslak başvurular gönderilebilir");
+
+        return app;
+    }
+
+
+    // ---------- INTERNAL SUBMIT ----------
+
+    @Transactional
+    public ApplicationResponseDto submitInternalApplication(Long userId, Long departmentId) {
+
+        Student student = studentService.findStudentIdByUserId(userId)
+                .orElseThrow(() ->
+                        new BusinessException("STU-404",
+                                "Bu kullanıcıya ait öğrenci profili bulunamadı"));;
+
+        Department dept = departmentService.findDepartmentById(departmentId);
+
+        checkCanSubmit(student.getStudentId(), dept.getDeptId());
+
+        Application app = createDraft(student, dept);
+
+        AcademicEligibilitySnapshot snapshot = academicSnapshotClient.fetchSnapshot(student.getStudentId().toString(), dept.getDeptId());
+
+        if (!eligibilityEvaluator.isEligible(snapshot, dept.getCriteria().toDto())) {
+            transitionService.transition(app, ApplicationStatus.CRITERIA_REJECTED, "Internal academic criteria not met");
+        } else {
+            transitionService.transition(app, ApplicationStatus.SUBMITTED, "Internal academic eligibility passed");
+        }
+
+        sendSubmitNotification(app);
+        return applicationMapper.map(app);
+    }
+
+    // ---------- DOMAIN RULES ----------
+
+    private void checkCanSubmit(Application app) {
+        checkCanSubmit(app.getStudent().getStudentId(), app.getDepartment().getDeptId());
+    }
+
+    private void checkCanSubmit(Long studentId, Long deptId) {
+
+        if (applicationRepository.existsByStudent_StudentIdAndDepartment_DeptIdAndStatusNotIn(studentId, deptId, ALLOWED_FOR_NEW_APPLICATION)) {
+
+            throw new BusinessException("APP-409", "Bu bölüm için devam eden veya sonuçlanmış bir başvurunuz bulunmaktadır.");
+        }
+    }
+
+    private void validateEligibilityOrReject(Application app, AcademicEligibilitySnapshot snapshot) {
+
+        DepartmentCriteriaDto criteria = app.getDepartment().getCriteria().toDto();
+
+        if (!eligibilityEvaluator.isEligible(snapshot, criteria)) {
+
+            transitionService.transition(app, ApplicationStatus.CRITERIA_REJECTED, "External academic criteria not met");
+
+            throw new BusinessException("ELIG-EXT-001", "Bölüm kriterleri sağlanamadı");
+        }
+    }
+
+    private void finalizeSubmission(Application app) {
+
+        transitionService.transition(app, ApplicationStatus.SUBMITTED, "External application submitted");
+    }
+
+    private void sendSubmitNotification(Application app) {
+
+        notificationService.create(app, "SUBMIT", "Yatay geçiş başvurunuz başarıyla alınmıştır. Başvuru No: " + app.getAppId());
+    }
 
     @Transactional
     private Application createDraftApplication(Student student, Department department) {
+
+        checkDuplicate(student.getStudentId(), department.getDeptId());
 
         Application app = new Application();
         app.setStudent(student);
@@ -95,48 +203,10 @@ public class ApplicationService {
         }
     }
 
-    @Transactional(noRollbackFor = BusinessException.class)
-    private void handleExternalStudentFlow(Application app, Department department) {
 
-        // Zorunlu belgeler: TRANSCRIPT + YKS_RESULT
-        documentService.validateMandatoryDocuments(app);
-
-        AcademicEligibilitySnapshot snapshot =
-                externalEligibilityExtractor.extract(app);
-
-        DepartmentCriteriaDto criteria = department.getCriteria().toDto();
-
-        if (!eligibilityEvaluator.isEligible(snapshot, criteria)) {
-
-            transitionService.transition(app, ApplicationStatus.CRITERIA_REJECTED,
-                    "External academic criteria not met");
-
-            throw new BusinessException("ELIG-EXT-001",
-                    "Yüklenen belgeler bölüm kriterlerini karşılamadığı için başvurunuz reddedildi.");
-
-        }
-
-        // ❗ İngilizce belgesi burada KONTROL EDİLMEZ
-        transitionService.transition(app, ApplicationStatus.SUBMITTED,
-                "Academic eligibility passed");
-    }
-
-
-    private void sendSubmitNotification(Application app) {
-
-        notificationService.create(app,
-                "SUBMIT",
-                "Yatay geçiş başvurunuz başarıyla alınmıştır. Başvuru No: " + app.getAppId());
-    }
-
-    private Student findStudent(Long id) {
-        return studentRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("STD-404", "Öğrenci bulunamadı."));
-    }
 
     private Department findDepartment(Long id) {
-        return departmentRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("DPT-404", "Bölüm bulunamadı."));
+        return departmentService.findDepartmentById(id);
     }
 
     private void checkDuplicate(Long studentId, Long departmentId) {
@@ -314,11 +384,6 @@ public class ApplicationService {
                 .toList();
     }
 
-    public Application findApplicationById(Long appId) {
-        return applicationRepository.findByIdWithRelations(appId)
-                .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
-    }
-
     public List<Application> findBYStatusIn(List<ApplicationStatus> statuses) {
         return applicationRepository
                 .findByStatusIn(statuses);
@@ -372,6 +437,11 @@ public class ApplicationService {
                 .stream()
                 .map(applicationMapper::map)
                 .toList();
+    }
+
+    public Application findApplicationById(Long appId) {
+        return applicationRepository.findByIdWithRelations(appId)
+                .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
     }
 
     @Transactional

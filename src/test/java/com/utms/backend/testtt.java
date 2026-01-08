@@ -13,7 +13,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -123,7 +122,7 @@ public class testtt {
     }
     private void submitApplication() throws Exception {
 
-        ApplicationSubmitRequest req = new ApplicationSubmitRequest(1L,1L);
+        ApplicationSubmitRequest req = new ApplicationSubmitRequest(1L);
 
         mockMvc.perform(post("/student/submit")
                         .with(user("std1").roles("STUDENT"))

@@ -89,6 +89,5 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     List<Application> findByStatusWithStudent(@Param("status") ApplicationStatus status);
 
 
-
-
+    boolean existsByStudent_StudentIdAndDepartment_DeptIdAndStatusNotIn(Long studentId, Long deptId, List<ApplicationStatus> allowedForNewApplication);
 }

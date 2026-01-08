@@ -12,18 +12,29 @@ import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.repository.ApplicationRepository;
 import com.utms.backend.repository.EnglishCertificateRepository;
 import com.utms.backend.repository.TransferDocumentRepository;
+import jakarta.transaction.SystemException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import java.nio.file.Paths;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -39,61 +50,57 @@ public class TransferDocumentService {
 
     private static final List<String> ALLOWED_TYPES =
             List.of("application/pdf", "image/jpeg");
-
     @Transactional
     public TransferDocumentResponseDto uploadDocument(Long appId,
                                                       DocumentType documentType,
-                                                      MultipartFile file) throws Exception {
+                                                      MultipartFile file) {
 
-        if (file == null || file.isEmpty()) {
-            throw new BusinessException("DOC-400", "Dosya seçilmedi.");
-        }
+        if (file == null || file.isEmpty())
+            throw new BusinessException("DOC-400", "No file selected.");
 
-        if (file.getSize() > 10 * 1024 * 1024) {
-            throw new BusinessException("DOC-413",
-                    "Dosya boyutu, izin verilen azami 10 MB sınırını aşmaktadır.");
-        }
+        if (file.getSize() > 10 * 1024 * 1024)
+            throw new BusinessException("DOC-413", "File size exceeds 10 MB limit.");
 
-        if (!ALLOWED_TYPES.contains(file.getContentType())) {
-            throw new BusinessException("DOC-400",
-                    "Sadece PDF veya JPEG dosyaları yüklenebilir.");
-        }
+        if (!ALLOWED_TYPES.contains(file.getContentType()))
+            throw new BusinessException("DOC-400", "Only PDF or JPEG files are allowed.");
 
         Application application = applicationRepository.findById(appId)
-                .orElseThrow(() -> new BusinessException("APP-404", "Başvuru bulunamadı."));
+                .orElseThrow(() -> new BusinessException("APP-404", "Application not found."));
 
-        // External öğrenci belge yüklemek zorundadır – zaten yukarıda garanti altına alındı
-        if (application.getStudent().getStudentType() == StudentType.EXTERNAL && file.isEmpty()) {
-            throw new BusinessException("DOC-401",
-                    "Dış üniversite öğrencileri belgeleri manuel yüklemek zorundadır.");
+        try {
+            Path root = Paths.get(uploadDir);
+            Files.createDirectories(root);
+
+            documentRepository.deleteByApplication_AppIdAndDocumentType(appId, documentType);
+
+            String ext = Objects.requireNonNull(file.getOriginalFilename())
+                    .substring(file.getOriginalFilename().lastIndexOf("."));
+
+            String hashedName = DigestUtils.sha256Hex(
+                    file.getOriginalFilename() + System.currentTimeMillis()
+            ) + ext;
+
+            Path targetPath = root.resolve(hashedName);
+
+            if (!scanForVirus(file))
+                throw new BusinessException("DOC-406", "Uploaded file contains malicious content.");
+
+            file.transferTo(targetPath.toFile());
+
+            TransferDocument doc = new TransferDocument();
+            doc.setApplication(application);
+            doc.setDocumentType(documentType);
+            doc.setFileName(file.getOriginalFilename());
+            doc.setFilePath(hashedName);   // ← SADECE LOGICAL PATH
+
+            return transferDocumentMapper.map(documentRepository.save(doc));
+
+        } catch (IOException ex) {
+
+            throw new BusinessException("SYS-500", "System error occurred while uploading file.");
         }
-
-        Files.createDirectories(Path.of(uploadDir));
-
-        // Aynı documentType tekrar yüklenirse eskisini sil
-        documentRepository.deleteByApplication_AppIdAndDocumentType(appId, documentType);
-
-        String hashedName = DigestUtils.sha256Hex(
-                file.getOriginalFilename() + System.currentTimeMillis()
-        );
-
-        File targetFile = new File(uploadDir + hashedName);
-
-        if (!scanForVirus(file)) {
-            throw new BusinessException("DOC-406", "Yüklenen dosyada zararlı içerik tespit edildi.");
-        }
-
-        file.transferTo(targetFile);
-
-        TransferDocument doc = new TransferDocument();
-        doc.setApplication(application);
-        doc.setDocumentType(documentType);
-        doc.setFileName(file.getOriginalFilename());
-        doc.setFilePath(targetFile.getAbsolutePath());
-
-        TransferDocument saved = documentRepository.save(doc);
-        return transferDocumentMapper.map(saved);
     }
+
 
     private boolean scanForVirus(MultipartFile file) {
         return true; // stub
@@ -150,23 +157,28 @@ public class TransferDocumentService {
     public void saveMockDocument(Application app, DocumentType type, byte[] content) {
 
         try {
-            Files.createDirectories(Path.of(uploadDir));
+            Path root = Paths.get(uploadDir);
+            Files.createDirectories(root);
 
             String name = "AUTO_" + type.name() + "_" + app.getAppId() + ".pdf";
-            Path path = Path.of(uploadDir, name);
+            Path path = root.resolve(name);
+
             Files.write(path, content);
 
             TransferDocument doc = new TransferDocument();
             doc.setApplication(app);
             doc.setDocumentType(type);
             doc.setFileName(name);
-            doc.setFilePath(path.toString());
+            doc.setFilePath(name);   // ← LOGICAL PATH
 
             documentRepository.save(doc);
-        } catch (Exception e) {
-            throw new RuntimeException("Mock belge üretilemedi");
+
+        } catch (IOException ex) {
+
+            throw new BusinessException("SYS-500", "Mock document generation failed.");
         }
     }
+
 
     public EnglishCertificate getEnglishCertificate(Long appId) {
 
@@ -174,6 +186,32 @@ public class TransferDocumentService {
                 .orElseThrow(() ->
                         new BusinessException("DOC-404",
                                 "English certificate not found for application"));
+    }
+
+
+    public ResponseEntity<Resource> download(Long docId) {
+
+        TransferDocument doc = documentRepository.findById(docId)
+                .orElseThrow(() -> new BusinessException("DOC-404","Document not found"));
+
+        Path filePath = Paths.get(uploadDir).resolve(doc.getFilePath());
+
+        try {
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (!resource.exists() || !resource.isReadable())
+                throw new BusinessException("DOC-404","File not found on server");
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + doc.getFileName() + "\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(resource);
+
+        } catch (MalformedURLException ex) {
+
+            throw new BusinessException("SYS-500","File download failed.");
+        }
     }
 
 }
