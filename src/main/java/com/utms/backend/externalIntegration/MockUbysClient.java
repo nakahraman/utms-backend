@@ -1,20 +1,24 @@
 package com.utms.backend.externalIntegration;
 
 
+import com.utms.backend.model.enums.UserSource;
+import com.utms.backend.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 @Service
+@RequiredArgsConstructor
 public class MockUbysClient implements ExternalUbysClient {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public boolean authenticate(String username, String password) {
 
-        return username.startsWith("std")
-               || username.startsWith("fac")
-               || username.startsWith("ygk")
-               || username.startsWith("oidb")
-               || username.startsWith("ydyo");
+        return userRepository.findByUsernameAndUserSource(username, UserSource.UBYS)
+                .filter(user -> passwordEncoder.matches(password, user.getPasswordHash()))
+                .isPresent();
     }
-
 }
 
