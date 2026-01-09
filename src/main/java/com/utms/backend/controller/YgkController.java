@@ -2,9 +2,11 @@ package com.utms.backend.controller;
 
 import com.utms.backend.model.dto.ApplicationResponseDto;
 import com.utms.backend.model.enums.Decision;
+import com.utms.backend.service.EvaluationRankingService;
 import com.utms.backend.service.YgkService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.AllArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,13 +15,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/ygk")
 @Tag(name = "YGK", description = "Higher Education Committee APIs")
+@AllArgsConstructor
 public class YgkController {
 
     private final YgkService ygkService;
+    private final EvaluationRankingService rankingService;
 
-    public YgkController(YgkService ygkService) {
-        this.ygkService = ygkService;
-    }
 
     @PreAuthorize("hasRole('YGK')")
     @GetMapping("/inbox")
@@ -37,4 +38,13 @@ public class YgkController {
                                     @RequestParam Decision decision) {
         ygkService.finalizeApplication(appId, decision);
     }
+
+    @PreAuthorize("hasRole('YGK')")
+    @PostMapping("/finalize-department")
+    @Operation(summary = "Finalize department",
+            description = "YGK gives final decision for departments")
+    public void finalizeDepartment(@RequestParam Long deptId) {
+        rankingService.recalculateRanksAndDecisions(deptId);
+    }
+
 }

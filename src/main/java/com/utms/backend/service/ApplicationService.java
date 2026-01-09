@@ -246,16 +246,20 @@ public class ApplicationService {
         Evaluation ev = evaluationService
                 .findEvaluationByApplicationId(app.getAppId());
 
-
+        // 1️⃣ Evaluation güncellenir
         ev.setDecision(decision);
         ev.setYgkMemberId(SecurityUtil.getCurrentUserId());
         evaluationService.save(ev);
 
+        // 2️⃣ Application snapshot decision yazılır
+        app.setDecision(decision);
+
+        // 3️⃣ Status transition
         ApplicationStatus target =
                 decision == Decision.REJECTED
                         ? ApplicationStatus.YGK_REJECTED
                         : decision == Decision.WAITLISTED
-                        ? ApplicationStatus.WAITLISTED
+                        ? ApplicationStatus.YGK_WAITLISTED
                         : ApplicationStatus.YGK_APPROVED;
 
         Application updated = transitionService.transition(
@@ -422,7 +426,7 @@ public class ApplicationService {
                 ApplicationStatus.OIDB_REJECTED,
                 ApplicationStatus.YGK_APPROVED,
                 ApplicationStatus.YGK_REJECTED,
-                ApplicationStatus.WAITLISTED
+                ApplicationStatus.YGK_WAITLISTED
         );
 
         return applicationRepository
@@ -438,7 +442,7 @@ public class ApplicationService {
                 ApplicationStatus.OIDB_REJECTED,
                 ApplicationStatus.YGK_APPROVED,
                 ApplicationStatus.YGK_REJECTED,
-                ApplicationStatus.WAITLISTED
+                ApplicationStatus.YGK_WAITLISTED
         );
 
         return applicationRepository

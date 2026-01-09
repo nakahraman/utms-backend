@@ -4,7 +4,6 @@ import com.utms.backend.exception.BusinessException;
 import com.utms.backend.mapper.ApplicationMapper;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.enums.ApplicationStatus;
-import com.utms.backend.model.enums.Decision;
 import com.utms.backend.model.enums.NotificationType;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
 import jakarta.transaction.Transactional;
@@ -46,7 +45,7 @@ public class ResultPublishService {
                 message = "Başvurunuz OIDB tarafından reddedilmiştir.";
             else if (app.getStatus() == ApplicationStatus.YGK_APPROVED)
                 message = "Başvurunuz ASİL olarak kabul edilmiştir.";
-            else if (app.getStatus() == ApplicationStatus.WAITLISTED)
+            else if (app.getStatus() == ApplicationStatus.YGK_WAITLISTED)
                 message = "Başvurunuz yedek listesine alınmıştır.";
             else if (app.getStatus() == ApplicationStatus.YGK_REJECTED)
                 message = "Başvurunuz YGK tarafından reddedilmiştir.";

@@ -19,10 +19,11 @@ public enum ApplicationStatus {
     FACULTY_RETURNED,
     YGK_APPROVED,
     YGK_REJECTED,
+    YGK_WAITLISTED,
 
     // Faculty / YGK
     FACULTY_EVALUATED,
     RETURNED_TO_OIDB,
-    WAITLISTED,
+
     SENT_TO_YGK,
 }

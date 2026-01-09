@@ -84,7 +84,8 @@ public class InterbalDraftFlowIT {
 
         //ygk
         ygkInbox();
-        ygkFinalize();
+        ygkFinalizeDepartment();
+     //   ygkFinalize();
 
         //oidb
         getOidbInbox();
@@ -273,6 +274,19 @@ public class InterbalDraftFlowIT {
 
 
     }
+
+    private void ygkFinalizeDepartment() throws Exception {
+
+        mockMvc.perform(post("/ygk/finalize-department")
+                        .header("Authorization", "Bearer " + loginFac("ygk1", "1"))
+                        .param("deptId", "1"))
+                .andExpect(status().isOk());
+
+
+    }
+
+
+
 
     private void getMyResult() throws Exception {
 

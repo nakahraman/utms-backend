@@ -21,14 +21,16 @@ INSERT INTO faculties (faculty_id, faculty_name) VALUES
 INSERT INTO departments
 (dept_id, faculty_id, dept_name,
  min_gpa, max_success_rank,
- requires_all_courses_passed, requires_portfolio)
+ requires_all_courses_passed, requires_portfolio,
+ quota, waitlist_quota)
 VALUES
-(1, 1, 'Computer Engineering', 2.50, 30000, TRUE, FALSE),
-(2, 1, 'Electrical-Electronics Engineering', 2.70, 25000, TRUE, FALSE),
-(3, 2, 'Mathematics', 3.00, 20000, TRUE, FALSE),
-(4, 2, 'Physics', 3.00, 18000, TRUE, FALSE),
-(5, 3, 'Architecture', 2.80, 35000, FALSE, TRUE),
-(6, 3, 'Urban and Regional Planning', 2.60, 40000, FALSE, FALSE);
+(1, 1, 'Computer Engineering', 2.50, 30000, TRUE, FALSE, 5, 3),
+(2, 1, 'Electrical-Electronics Engineering', 2.70, 25000, TRUE, FALSE, 5, 3),
+(3, 2, 'Mathematics', 3.00, 20000, TRUE, FALSE, 4, 2),
+(4, 2, 'Physics', 3.00, 18000, TRUE, FALSE, 4, 2),
+(5, 3, 'Architecture', 2.80, 35000, FALSE, TRUE, 3, 2),
+(6, 3, 'Urban and Regional Planning', 2.60, 40000, FALSE, FALSE, 3, 2);
+
 
 -------------------------------------------------------
 -- USERS

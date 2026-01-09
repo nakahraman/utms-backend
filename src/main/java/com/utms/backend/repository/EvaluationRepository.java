@@ -34,4 +34,14 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     List<Evaluation> findByApplicationIn(List<Application> apps);
 
     void deleteByApplicationIn(List<Application> apps);
+
+    @Query("""
+       select e from Evaluation e
+       join e.application a
+       where a.department.deptId = :deptId
+       and a.status = com.utms.backend.model.enums.ApplicationStatus.SENT_TO_YGK
+       order by e.score desc
+       """)
+    List<Evaluation> findByDepartmentOrderedByScoreDesc(@Param("deptId") Long deptId);
+
 }

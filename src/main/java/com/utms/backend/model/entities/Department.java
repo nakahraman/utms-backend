@@ -37,4 +37,9 @@ public class Department {
     @Embedded
     private DepartmentCriteria criteria;
 
+    private Integer quota;
+
+    @Column(name = "waitlist_quota")
+    private Integer waitlistQuota;
+
 }
