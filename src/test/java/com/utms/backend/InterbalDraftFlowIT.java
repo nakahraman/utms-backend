@@ -60,7 +60,6 @@ public class InterbalDraftFlowIT {
         //ydyo
         ydyoInbox();
         ydyoValidate();
-        ydyoPlacementExam();
 
         //oidb
         getOidbInbox();

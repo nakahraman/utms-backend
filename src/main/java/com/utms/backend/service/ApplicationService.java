@@ -350,11 +350,23 @@ public class ApplicationService {
             throw new BusinessException("YDYO-401",
                     "Only YDYO routed applications can be validated");
 
+
+        // 🔵 INTERNAL öğrenciler doğrudan YDYO_VALIDATED
+        if (app.getStudent().getStudentType() == StudentType.INTERNAL) {
+
+            return applicationMapper.map(
+                    transitionService.transition(
+                            app,
+                            ApplicationStatus.YDYO_APPROVED,
+                            "Internal student – English proficiency assumed valid"
+                    )
+            );
+        }
+
         boolean hasCert =
                 documentService.hasDocument(app.getAppId(), DocumentType.ENGLISH_CERTIFICATE);
 
-        if (!hasCert) {
-
+        if (!hasCert && app.getStudent().getStudentType().equals(StudentType.EXTERNAL)) {
             return applicationMapper.map(
                     transitionService.transition(app,
                             ApplicationStatus.YDYO_EXAM_REQUIRED,
