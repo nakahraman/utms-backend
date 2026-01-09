@@ -44,11 +44,12 @@ public class EmailService {
         String submitDate = app.getSubmissionDate()
                 .toLocalDate()
                 .format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        Long appId = app.getAppId();
 
         return """
             Sayın %s,
 
-            %s tarihinde %s bölümüne yapmış olduğunuz yatay geçiş başvurunuzun sonucu aşağıda bilgilerinize sunulmuştur.
+            %s tarihinde %s bölümüne yapmış olduğunuz % numaralı yatay geçiş başvurunuzun sonucu aşağıda bilgilerinize sunulmuştur.
 
             Başvuru Sonucu:
             %s
@@ -57,6 +58,6 @@ public class EmailService {
 
             İyi çalışmalar dileriz.
             İYTE Öğrenci İşleri Daire Başkanlığı
-            """.formatted(studentName, submitDate, departmentName, decisionMessage);
+            """.formatted(studentName, submitDate, departmentName, appId, decisionMessage);
     }
 }
