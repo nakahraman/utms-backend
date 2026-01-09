@@ -29,13 +29,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import java.nio.file.Paths;
-import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -172,37 +171,6 @@ public class DocumentService {
             }
         }
     }
-
-
-    public boolean hasDocument(Long appId, DocumentType type) {
-        return documentRepository.existsByApplication_AppIdAndDocumentType(appId, type);
-    }
-
-    public void saveMockDocument(Application app, DocumentType type, byte[] content) {
-
-        try {
-            Path root = Paths.get(uploadDir);
-            Files.createDirectories(root);
-
-            String name = "AUTO_" + type.name() + "_" + app.getAppId() + ".pdf";
-            Path path = root.resolve(name);
-
-            Files.write(path, content);
-
-            TransferDocument doc = new TransferDocument();
-            doc.setApplication(app);
-            doc.setDocumentType(type);
-            doc.setFileName(name);
-            doc.setFilePath(name);   // ← LOGICAL PATH
-
-            documentRepository.save(doc);
-
-        } catch (IOException ex) {
-
-            throw new BusinessException("SYS-500", "Mock document generation failed.");
-        }
-    }
-
 
     public ResponseEntity<Resource> download(Long docId) {
 

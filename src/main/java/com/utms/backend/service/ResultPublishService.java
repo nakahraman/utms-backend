@@ -1,7 +1,6 @@
 package com.utms.backend.service;
 
 import com.utms.backend.exception.BusinessException;
-import com.utms.backend.mapper.ApplicationMapper;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.enums.NotificationType;
@@ -17,7 +16,6 @@ import java.util.List;
 public class ResultPublishService {
 
     private final ApplicationService applicationService;
-    private final ApplicationMapper applicationMapper;
     private final NotificationService notificationService;
     private final ApplicationStatusTransitionService transitionService;
 

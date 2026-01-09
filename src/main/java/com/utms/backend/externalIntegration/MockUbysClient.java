@@ -1,7 +1,6 @@
 package com.utms.backend.externalIntegration;
 
 
-import com.utms.backend.model.enums.Role;
 import org.springframework.stereotype.Service;
 
 @Service

@@ -5,6 +5,5 @@ public enum Role {
     FACULTY,
     YGK,
     OIDB,
-
     YDYO
 }

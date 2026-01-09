@@ -1,8 +1,6 @@
 package com.utms.backend.service;
 
 import com.utms.backend.eligibility.externalStudent.ExternalEligibilityExtractor;
-import com.utms.backend.eligibility.internalStudent.ExternalAcademicSnapshotClient;
-import com.utms.backend.eligibility.internalStudent.InternalEligibilityExtractor;
 import com.utms.backend.exception.BusinessException;
 import com.utms.backend.mapper.ApplicationMapper;
 import com.utms.backend.model.dto.ApplicationResponseDto;
@@ -29,9 +27,7 @@ public class ApplicationService {
     private final NotificationService notificationService;
     private final ApplicationStatusTransitionService transitionService;
     private final ApplicationMapper applicationMapper;
-    private final ExternalAcademicSnapshotClient academicSnapshotClient;
     private final ExternalEligibilityExtractor externalEligibilityExtractor;
-    private final InternalEligibilityExtractor internalEligibilityExtractor;
     private final EnglishCertificateService englishCertificateService;
     private final EvaluationService evaluationService;
     private final StudentService studentService;
@@ -258,30 +254,17 @@ public class ApplicationService {
                 .toList();
     }
 
-    public List<Application> findBYStatusIn(List<ApplicationStatus> statuses) {
+    public List<ApplicationResponseDto> getFacultyInbox(List<ApplicationStatus> statuses, Long facultyId) {
         return applicationRepository
-                .findByStatusIn(statuses);
-    }
-
-    public List<Application> getDeptEvaluatedApplications(ApplicationStatus status, Long facultyId) {
-        return applicationRepository
-                .findByStatusAndDepartment_Faculty_FacultyId(
-                        status,
-                        facultyId
-                );
-    }
-
-    public List<ApplicationResponseDto> findByStatusInAndFacultyId(List<ApplicationStatus> statuses, Long facultyId) {
-        return applicationRepository
-                .findFacultyInbox(statuses, facultyId)
+                .getFacultyInbox(statuses, facultyId)
                 .stream()
                 .map(applicationMapper::map)
                 .toList();
     }
 
-    public List<Application> findByStatusInAndFacultyIdForEval(List<ApplicationStatus> statuses, Long facultyId) {
+    public List<Application> getFacultyApplicationsForEvaluation(List<ApplicationStatus> statuses, Long facultyId) {
         return applicationRepository
-                .getFaxultyInbox(statuses, facultyId);
+                .getFacultyInbox(statuses, facultyId);
     }
 
     public ApplicationResponseDto getMyResult() {
@@ -294,15 +277,6 @@ public class ApplicationService {
                 .orElseThrow(() -> new BusinessException("RES-404", "Sonuç bulunamadı"));
 
         return applicationMapper.map(app);
-    }
-
-    public List<ApplicationResponseDto> getPublishedResults() {
-
-        return applicationRepository
-                .findByStatusWithStudent(ApplicationStatus.RESULT_PUBLISHED)
-                .stream()
-                .map(applicationMapper::map)
-                .toList();
     }
 
     public Application findApplicationById(Long appId) {

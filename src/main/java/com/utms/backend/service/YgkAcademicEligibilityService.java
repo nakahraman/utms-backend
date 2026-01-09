@@ -4,7 +4,6 @@ import com.utms.backend.eligibility.externalStudent.ExternalEligibilityExtractor
 import com.utms.backend.eligibility.internalStudent.InternalEligibilityExtractor;
 import com.utms.backend.exception.BusinessException;
 import com.utms.backend.model.entities.*;
-import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.enums.EnglishProficiencyResult;
 import com.utms.backend.model.enums.StudentType;
 import lombok.RequiredArgsConstructor;

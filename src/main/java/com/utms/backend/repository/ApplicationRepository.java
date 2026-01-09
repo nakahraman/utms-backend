@@ -11,13 +11,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
-    List<Application> findByStudent_StudentId(Long studentId);
 
     List<Application> findByStatus(ApplicationStatus status);
-
-    List<Application> findByStatusIn(List<ApplicationStatus> statuses);
-
-    List<Application> findByStatusAndDepartment_Faculty_FacultyId(ApplicationStatus status, Long facultyId);
 
     @Query("""
             select a from Application a
@@ -64,19 +59,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
             """)
     List<Application> findFinalResultsFiltered(@Param("statuses") List<ApplicationStatus> statuses,
                                        @Param("published") Boolean published);
-    boolean existsByStudent_StudentIdAndDepartment_DeptId(Long studentId, Long departmentId);
-
-    @Query("""
-                select a
-                from Application a
-                join a.student s
-                join s.department d
-                join d.faculty f
-                where a.status in :statuses
-                  and f.facultyId = :facultyId
-            """)
-    List<Application> findFacultyInbox(@Param("statuses") List<ApplicationStatus> statuses,
-                                       @Param("facultyId") Long facultyId);
 
 
     @Query("""
@@ -87,19 +69,12 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
                 where a.status in :statuses
                   and f.facultyId = :facultyId
             """)
-    List<Application> getFaxultyInbox(
+    List<Application> getFacultyInbox(
             @Param("statuses") List<ApplicationStatus> statuses,
             @Param("facultyId") Long facultyId);
 
 
     Optional<Application> findByStudentStudentIdAndStatus(Long studentId, ApplicationStatus resultPublished);
-
-    @Query("""
-                SELECT a FROM Application a
-                JOIN FETCH a.student s
-                WHERE a.status = :status
-            """)
-    List<Application> findByStatusWithStudent(@Param("status") ApplicationStatus status);
 
 
     boolean existsByStudent_StudentIdAndDepartment_DeptIdAndStatusNotIn(Long studentId, Long deptId, List<ApplicationStatus> allowedForNewApplication);

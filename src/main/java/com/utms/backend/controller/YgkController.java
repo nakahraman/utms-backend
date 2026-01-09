@@ -1,7 +1,6 @@
 package com.utms.backend.controller;
 
 import com.utms.backend.model.dto.ApplicationResponseDto;
-import com.utms.backend.model.enums.Decision;
 import com.utms.backend.service.EvaluationRankingService;
 import com.utms.backend.service.YgkService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,9 +26,19 @@ public class YgkController {
     @Operation(summary = "YGK inbox",
             description = "Returns applications validated by OIDB and approved by faculty")
     public List<ApplicationResponseDto> getInbox() {
-        return ygkService.getInbox();
+        return ygkService.getYgkInbox();
     }
 
+
+    @PreAuthorize("hasRole('YGK')")
+    @PostMapping("/finalize-department")
+    @Operation(summary = "Finalize department",
+            description = "YGK gives final decision for departments")
+    public void finalizeDepartment(@RequestParam Long deptId) {
+        rankingService.recalculateRanksAndDecisions(deptId);
+    }
+
+    /*
     @PreAuthorize("hasRole('YGK')")
     @PostMapping("/finalize")
     @Operation(summary = "Finalize application",
@@ -39,12 +48,7 @@ public class YgkController {
         ygkService.finalizeApplication(appId, decision);
     }
 
-    @PreAuthorize("hasRole('YGK')")
-    @PostMapping("/finalize-department")
-    @Operation(summary = "Finalize department",
-            description = "YGK gives final decision for departments")
-    public void finalizeDepartment(@RequestParam Long deptId) {
-        rankingService.recalculateRanksAndDecisions(deptId);
-    }
+     */
+
 
 }

@@ -1,6 +1,5 @@
 package com.utms.backend.service;
 
-import com.utms.backend.exception.BusinessException;
 import com.utms.backend.model.entities.EnglishCertificate;
 import com.utms.backend.model.enums.EnglishCertType;
 import com.utms.backend.repository.EnglishCertificateRepository;

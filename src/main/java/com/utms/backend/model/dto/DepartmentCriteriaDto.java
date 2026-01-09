@@ -1,6 +1,5 @@
 package com.utms.backend.model.dto;
 
-import jakarta.persistence.*;
 import lombok.Data;
 
 import java.util.List;

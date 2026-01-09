@@ -10,8 +10,6 @@ import java.util.Optional;
 public interface TransferDocumentRepository extends JpaRepository<TransferDocument, Long> {
     List<TransferDocument> findByApplication_AppId(Long appId);
 
-    boolean existsByApplication_AppIdAndDocumentType(Long appId, DocumentType documentType);
-
     void deleteByApplication_AppIdAndDocumentType(Long appId, DocumentType documentType);
 
     Optional<TransferDocument> findByApplication_AppIdAndDocumentType(

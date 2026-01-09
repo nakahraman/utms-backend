@@ -1,9 +1,6 @@
 package com.utms.backend.service;
 
-import com.utms.backend.eligibility.externalStudent.ExternalEligibilityExtractor;
 import com.utms.backend.exception.BusinessException;
-import com.utms.backend.model.entities.AcademicEligibilitySnapshot;
-import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Student;
 import com.utms.backend.model.entities.User;
 import com.utms.backend.model.enums.StudentType;
