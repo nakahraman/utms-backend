@@ -12,4 +12,5 @@ public class AcademicEligibilitySnapshot {
     private int successRank;
     private int targetSemester;
     private boolean hasPortfolio;
+    private double examScore;  // YKS / ÖSYS  puanı
 }

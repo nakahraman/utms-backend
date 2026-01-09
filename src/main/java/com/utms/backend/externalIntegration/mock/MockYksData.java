@@ -6,5 +6,6 @@ import lombok.Data;
 @Data
 public class MockYksData {
 
-    private int successRank;
+    private int successRank; // YKS / ÖSYS sıralaması
+    private double examScore;  // YKS / ÖSYS  puanı
 }

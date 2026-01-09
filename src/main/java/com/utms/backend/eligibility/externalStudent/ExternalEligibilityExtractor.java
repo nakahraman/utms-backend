@@ -50,6 +50,7 @@ public class ExternalEligibilityExtractor
         snapshot.setHasFailedCourse(tData.isHasFailedCourse());
         snapshot.setHasLeaveSemester(tData.isHasLeaveSemester());
         snapshot.setTargetSemester(tData.getTargetSemester());
+        snapshot.setExamScore(yData.getExamScore());
         snapshot.setSuccessRank(yData.getSuccessRank());
         snapshot.setHasPortfolio(hasPortfolio);
 
