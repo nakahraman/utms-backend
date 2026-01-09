@@ -3,7 +3,6 @@ package com.utms.backend;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.utms.backend.externalIntegration.DocumentVerificationService;
-import com.utms.backend.model.record.ApplicationSubmitRequest;
 import com.utms.backend.model.record.LoginRequest;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -22,6 +21,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -42,6 +42,7 @@ public class InterbalDraftFlowIT {
 
     @MockBean
     private DocumentVerificationService documentVerificationService;
+
 
     @Test
     void externalDraftFlow() throws Exception {
@@ -81,19 +82,42 @@ public class InterbalDraftFlowIT {
         //oidb
         getOidbInbox();
         sendToYgk();
+
+        //ygk
+        ygkInbox();
+        ygkFinalize();
+
         //oidb
         getOidbInbox();
         publishResults();
+
+        getFinalizedResultsAll();
+        getFinalizedResultsPublished();
 
         //student
         getMyResult();
 
     }
 
+
+    private String loginFac(String username, String password) throws Exception {
+
+        LoginRequest req = new LoginRequest(username, password);
+
+        MvcResult result = mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        return result.getResponse().getContentAsString();
+    }
+
     private void mockDocumentVerification() {
         Mockito.when(documentVerificationService.verify(Mockito.any(), Mockito.any()))
                 .thenReturn(true);
     }
+
     private void login() throws Exception {
 
         LoginRequest req = new LoginRequest("std1", "1");
@@ -133,7 +157,7 @@ public class InterbalDraftFlowIT {
     private void getOidbInbox() throws Exception {
 
         mockMvc.perform(get("/oidb/inbox")
-                        .with(user("oidb1").roles("OIDB")))
+                        .header("Authorization", "Bearer " + loginFac("oidb1", "1")))
                 .andExpect(status().isOk());
 
     }
@@ -190,8 +214,9 @@ public class InterbalDraftFlowIT {
     private void facultyInbox() throws Exception {
 
         mockMvc.perform(get("/faculty/inbox")
-                        .with(user("fac1").roles("FACULTY")))
+                        .header("Authorization", "Bearer " + loginFac("fac1", "1")))
                 .andExpect(status().isOk());
+
     }
 
 
@@ -214,10 +239,11 @@ public class InterbalDraftFlowIT {
     private void facultyEvaluate() throws Exception {
 
         mockMvc.perform(post("/faculty/evaluate")
-                        .with(user("fac1").roles("FACULTY"))
-                        .param("quota", "5"))
+                        .header("Authorization", "Bearer " + loginFac("fac1", "1"))
+                        .param("quota", "5"))   // ← BURASI EKSİKTİ
                 .andExpect(status().isOk());
     }
+
 
     private void sendToYgk() throws Exception {
 
@@ -241,24 +267,42 @@ public class InterbalDraftFlowIT {
     private void ygkFinalize() throws Exception {
 
         mockMvc.perform(post("/ygk/finalize")
-                        .with(user("ygk1").roles("YGK"))
+                        .header("Authorization", "Bearer " + loginFac("ygk1", "1"))
                         .param("appId", appId.toString())
                         .param("decision", "PRIMARY"))
-                .andExpect(status().isOk());
+                        .andExpect(status().isOk());
 
 
     }
 
     private void getMyResult() throws Exception {
 
-        mockMvc.perform(get("/student/student/results")
-                        .with(user("std1").roles("STUDENT")))
+        mockMvc.perform(get("/student/results")
+                        .header("Authorization", "Bearer " + loginFac("std1", "1")))
                 .andExpect(status().isOk());
     }
+
     private void publishResults() throws Exception {
 
         mockMvc.perform(post("/oidb/publish-results")
-                        .with(user("oidb1").roles("OIDB")))
+                .header("Authorization", "Bearer " +  loginFac("oidb1", "1")))
                 .andExpect(status().isOk());
     }
+
+    private void getFinalizedResultsAll() throws Exception {
+
+        mockMvc.perform(get("/oidb/results")
+                        .header("Authorization", "Bearer " +  loginFac("oidb1", "1")))
+                .andExpect(status().isOk());
+    }
+
+    private void getFinalizedResultsPublished() throws Exception {
+
+        mockMvc.perform(get("/oidb/results")
+                        .header("Authorization", "Bearer " +  loginFac("oidb1", "1"))
+                        .param("published", "true"))
+                .andExpect(status().isOk());
+    }
+
+
 }

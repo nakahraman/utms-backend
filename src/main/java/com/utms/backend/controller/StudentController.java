@@ -45,14 +45,14 @@ public class StudentController {
     }
 
     @PreAuthorize("hasRole('STUDENT')")
-    @GetMapping("/student/{studentId}")
+    @GetMapping("/{studentId}")
     @Operation(summary = "Get own applications", description = "Student views own applications")
     public List<ApplicationResponseDto> getApplicationsByStudent(@PathVariable Long studentId) {
         return applicationService.getApplicationsByStudent(studentId);
     }
 
     @PreAuthorize("hasRole('STUDENT')")
-    @GetMapping("/student/results")
+    @GetMapping("/results")
     public ApplicationResponseDto getMyResult() {
         return applicationService.getMyResult();
     }

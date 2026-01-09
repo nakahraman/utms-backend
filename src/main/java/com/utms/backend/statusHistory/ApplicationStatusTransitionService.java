@@ -71,12 +71,21 @@ public class ApplicationStatusTransitionService {
                                     ApplicationStatus.WAITLISTED,
                                     ApplicationStatus.YGK_REJECTED)),
 
+                    // --- OIDB PUBLISH RESULTS ---
+                    Map.entry(ApplicationStatus.YGK_APPROVED,
+                            Set.of(ApplicationStatus.RESULT_PUBLISHED)),
+                    Map.entry(ApplicationStatus.WAITLISTED,
+                            Set.of(ApplicationStatus.RESULT_PUBLISHED)),
+                    Map.entry(ApplicationStatus.OIDB_REJECTED,
+                            Set.of(ApplicationStatus.RESULT_PUBLISHED)),
+                    Map.entry(ApplicationStatus.OIDB_CRITERIA_REJECTED,
+                            Set.of(ApplicationStatus.RESULT_PUBLISHED)),
+                    Map.entry(ApplicationStatus.YGK_REJECTED,
+                            Set.of(ApplicationStatus.RESULT_PUBLISHED)),
+
 
                     // --- TERMINAL ---
-                    Map.entry(ApplicationStatus.OIDB_REJECTED, Set.of()),
-                    Map.entry(ApplicationStatus.OIDB_CRITERIA_REJECTED, Set.of()),
-                    Map.entry(ApplicationStatus.YGK_APPROVED, Set.of()),
-                    Map.entry(ApplicationStatus.YGK_REJECTED, Set.of())
+                    Map.entry(ApplicationStatus.RESULT_PUBLISHED, Set.of())
 
             );
 

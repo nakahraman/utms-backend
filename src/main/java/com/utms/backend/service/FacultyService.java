@@ -28,7 +28,7 @@ public class FacultyService {
         Long facultyId = SecurityUtil.getCurrentUserFacultyId();
 
         List<ApplicationStatus> statuses =
-                List.of(ApplicationStatus.OIDB_VALIDATED, ApplicationStatus.YDYO_APPROVED);
+                List.of(ApplicationStatus.OIDB_VALIDATED);
 
         return applicationService
                 .findByStatusInAndFacultyId(statuses, facultyId);

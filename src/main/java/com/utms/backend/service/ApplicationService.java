@@ -64,11 +64,14 @@ public class ApplicationService {
     @Transactional
     public ApplicationResponseDto submitExternalApplication(Long appId) {
 
-        Application app = authorizeAndLoadDraft(appId);
+        Application app = authorize(appId);
 
         checkCanSubmit(app.getStudent().getStudentId(), app.getDepartment().getDeptId());
 
         documentService.validateMandatoryDocuments(app);
+
+        AcademicEligibilitySnapshot snapshot = externalEligibilityExtractor.extract(app);
+        app.setGpa(snapshot.getGpa());
 
         finalizeSubmission(app, "External application submitted");
 
@@ -77,7 +80,7 @@ public class ApplicationService {
         return applicationMapper.map(app);
     }
 
-    private Application authorizeAndLoadDraft(Long appId) {
+    private Application authorize(Long appId) {
 
         Long userId = SecurityUtil.getCurrentUserId();
         Application app = findApplicationById(appId);
@@ -102,8 +105,9 @@ public class ApplicationService {
                         new BusinessException("STU-404",
                                 "Bu kullanıcıya ait öğrenci profili bulunamadı"));
 
-        Application app = authorizeAndLoadDraft(appId);
+        Application app = authorize(appId);
 
+        app.setGpa(student.getGpa());
         checkCanSubmit(student.getStudentId(), app.getDepartment().getDeptId());
 
         finalizeSubmission(app, "Internal application submitted");
@@ -121,18 +125,6 @@ public class ApplicationService {
         if (applicationRepository.existsByStudent_StudentIdAndDepartment_DeptIdAndStatusNotIn(studentId, deptId, ALLOWED_FOR_NEW_APPLICATION)) {
 
             throw new BusinessException("APP-409", "Bu bölüm için devam eden veya sonuçlanmış bir başvurunuz bulunmaktadır.");
-        }
-    }
-
-    private void validateEligibilityOrReject(Application app, AcademicEligibilitySnapshot snapshot) {
-
-        DepartmentCriteriaDto criteria = app.getDepartment().getCriteria().toDto();
-
-        if (!eligibilityEvaluator.isEligible(snapshot, criteria)) {
-
-            transitionService.transition(app, ApplicationStatus.OIDB_CRITERIA_REJECTED, "External academic criteria not met");
-
-            throw new BusinessException("ELIG-EXT-001", "Bölüm kriterleri sağlanamadı");
         }
     }
 

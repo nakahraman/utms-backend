@@ -40,13 +40,26 @@ public class ResultPublishService {
 
             if (app.isPublished()) continue;
 
-            app.setPublished(true);
+            String message;
 
-            String message =
-                    app.getStatus() == ApplicationStatus.OIDB_REJECTED ? "Başvurunuz OIBD tarafından reddedilmiştir." :
-                            app.getStatus() == ApplicationStatus.YGK_APPROVED ? "Başvurunuz kabul edilmiştir (Asıl)." :
-                                    app.getStatus() == ApplicationStatus.WAITLISTED ? "Başvurunuz yedek listesine alınmıştır." :
-                                            "Başvurunuz YGK tarafından reddedilmiştir.";
+            if (app.getStatus() == ApplicationStatus.OIDB_REJECTED)
+                message = "Başvurunuz OIDB tarafından reddedilmiştir.";
+            else if (app.getStatus() == ApplicationStatus.YGK_APPROVED)
+                message = "Başvurunuz ASİL olarak kabul edilmiştir.";
+            else if (app.getStatus() == ApplicationStatus.WAITLISTED)
+                message = "Başvurunuz yedek listesine alınmıştır.";
+            else if (app.getStatus() == ApplicationStatus.YGK_REJECTED)
+                message = "Başvurunuz YGK tarafından reddedilmiştir.";
+            else
+                message = "Başvurunuz sonuçlandırılmıştır.";
+
+            Application updated = transitionService.transition(
+                    app,
+                    ApplicationStatus.RESULT_PUBLISHED,
+                    message
+            );
+
+            updated.setPublished(true);
 
             notificationService.create(app, NotificationType.RESULT.toString(), message);
         }
