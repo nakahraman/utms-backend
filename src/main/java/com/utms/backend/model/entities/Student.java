@@ -21,7 +21,7 @@ public class Student {
     private Long studentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dept_id")
+    @JoinColumn(name = "dept_id", nullable = false)
     private Department department;
 
     private Double gpa;
@@ -32,8 +32,9 @@ public class Student {
     private StudentType studentType;
 
     @OneToOne
-    @JoinColumn(name = "user_id", unique = true)
+    @JoinColumn(name = "user_id", unique = true, nullable = false)
     private User user;
+
 
     @Column(name = "success_rank")
     private Integer successRank;  // YKS / ÖSYS başarı sırası

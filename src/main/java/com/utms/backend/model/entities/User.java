@@ -44,4 +44,8 @@ public class User {
     @Column(nullable = false)
     private String name;
 
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private Student student;
+
+
 }

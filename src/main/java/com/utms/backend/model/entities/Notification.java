@@ -11,7 +11,7 @@ import org.hibernate.annotations.Where;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "evaluations")
+@Table(name = "notifications")
 @Data
 @Builder
 @AllArgsConstructor
@@ -22,8 +22,8 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long notifId;
 
-    @ManyToOne
-    @JoinColumn(name = "app_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "app_id", nullable = false)
     private Application application;
 
     private String type;

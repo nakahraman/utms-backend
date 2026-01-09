@@ -16,8 +16,8 @@ public class TransferDocument {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long documentId;
 
-    @ManyToOne
-    @JoinColumn(name = "app_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "app_id", nullable = false)
     private Application application;
 
     @Enumerated(EnumType.STRING)

@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "faculties")
 @Data
@@ -19,4 +22,8 @@ public class Faculty {
     private Long facultyId;
 
     private String facultyName;
+
+    @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL)
+    private List<Department> departments = new ArrayList<>();
+
 }

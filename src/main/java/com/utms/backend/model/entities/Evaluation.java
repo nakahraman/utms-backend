@@ -21,14 +21,15 @@ public class Evaluation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long evalId;
 
-    @ManyToOne
-    @JoinColumn(name = "app_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "app_id", nullable = false)
     private Application application;
 
     private Long ygkMemberId;
 
     private Double score;
 
+    @Column(name = "success_rank")
     private Integer rank;
 
     @Enumerated(EnumType.STRING)
