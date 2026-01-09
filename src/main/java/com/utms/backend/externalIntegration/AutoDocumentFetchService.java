@@ -2,7 +2,7 @@ package com.utms.backend.externalIntegration;
 
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.enums.DocumentType;
-import com.utms.backend.service.TransferDocumentService;
+import com.utms.backend.service.DocumentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +13,7 @@ import java.util.List;
 public class AutoDocumentFetchService {
 
     private final List<ExternalDocumentProvider> providers;
-    private final TransferDocumentService documentService;
+    private final DocumentService documentService;
 
     public void fetchMissingDocuments(Application app) {
 

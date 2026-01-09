@@ -12,11 +12,9 @@ import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.repository.ApplicationRepository;
 import com.utms.backend.repository.EnglishCertificateRepository;
 import com.utms.backend.repository.TransferDocumentRepository;
-import jakarta.transaction.SystemException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.DocumentDocument;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -25,7 +23,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -34,15 +31,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
 
-import javax.swing.text.Document;
 import java.nio.file.Paths;
 import java.util.Objects;
 
 @Service
 @AllArgsConstructor
-public class TransferDocumentService {
+public class DocumentService {
 
     private final TransferDocumentRepository documentRepository;
     private final ApplicationRepository applicationRepository;

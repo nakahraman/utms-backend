@@ -14,7 +14,7 @@ public class UbysClient {
         dto.setHasFailedCourse(false);
         dto.setHasLeaveSemester(false);
         dto.setTargetSemester(5);
-        dto.setSuccessRank(18);
+        dto.setSuccessRank(18000);
 
         return dto;
     }

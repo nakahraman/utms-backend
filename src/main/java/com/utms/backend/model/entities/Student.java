@@ -26,7 +26,7 @@ public class Student {
 
     private Double gpa;
 
-    private Double examScore;
+    private Double examScore; // YKS / ÖSYS  puanı
 
     @Enumerated(EnumType.STRING)
     private StudentType studentType;
@@ -34,4 +34,8 @@ public class Student {
     @OneToOne
     @JoinColumn(name = "user_id", unique = true)
     private User user;
+
+    @Column(name = "success_rank")
+    private Integer successRank;  // YKS / ÖSYS başarı sırası
+
 }

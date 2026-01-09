@@ -1,13 +1,11 @@
 package com.utms.backend.service;
 
 import com.utms.backend.eligibility.externalStudent.ExternalEligibilityExtractor;
-import com.utms.backend.eligibility.internalStudent.AcademicEligibilityEvaluator;
 import com.utms.backend.eligibility.internalStudent.ExternalAcademicSnapshotClient;
 import com.utms.backend.eligibility.internalStudent.InternalEligibilityExtractor;
 import com.utms.backend.exception.BusinessException;
 import com.utms.backend.mapper.ApplicationMapper;
 import com.utms.backend.model.dto.ApplicationResponseDto;
-import com.utms.backend.model.dto.DepartmentCriteriaDto;
 import com.utms.backend.model.entities.*;
 import com.utms.backend.model.enums.*;
 import com.utms.backend.repository.ApplicationRepository;
@@ -26,12 +24,11 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final DepartmentService departmentService;
-    private final TransferDocumentService documentService;
+    private final DocumentService documentService;
     private final NotificationService notificationService;
     private final ApplicationStatusTransitionService transitionService;
     private final ApplicationMapper applicationMapper;
     private final ExternalAcademicSnapshotClient academicSnapshotClient;
-    private final AcademicEligibilityEvaluator eligibilityEvaluator;
     private final ExternalEligibilityExtractor externalEligibilityExtractor;
     private final InternalEligibilityExtractor internalEligibilityExtractor;
     private final EnglishScoreService englishScoreService;
@@ -160,72 +157,24 @@ public class ApplicationService {
                 .map(applicationMapper::map)
                 .toList();
     }
+
     @Transactional
-    public ApplicationResponseDto oidbValidateApplication(Long appId, boolean valid) {
+    public ApplicationResponseDto oidbValidateApplication(Long appId) {
 
         Application app = findApplicationById(appId);
 
-        // 🔒 OIDB yalnızca YDYO sonucu gelmiş başvurularla çalışır
-        if (app.getStatus() != ApplicationStatus.YDYO_APPROVED &&
-            app.getStatus() != ApplicationStatus.YDYO_FAILED) {
+        if (app.getStatus() != ApplicationStatus.YDYO_APPROVED) {
 
             throw new BusinessException("OIDB-403",
-                    "Only applications evaluated by YDYO can be validated by OIDB");
+                    "Only applications approved by YDYO can be validated by OIDB");
         }
 
-        // 1️⃣ Belgeler eksik mi?
-
-
-        AcademicEligibilitySnapshot snapshot;
-
-        if (app.getStudent().getStudentType() == StudentType.EXTERNAL) {
-            documentService.validateMandatoryDocuments(app);
-            snapshot = externalEligibilityExtractor.extract(app);
-        } else {
-            snapshot = internalEligibilityExtractor.extract(app);
-        }
-
-        DepartmentCriteriaDto criteria =
-                app.getDepartment().getCriteria().toDto();
-
-        boolean eligible =
-                eligibilityEvaluator.isEligible(snapshot, criteria);
-
-        if (!eligible) {
-
-            app.setValidationStatus(ValidationStatus.FLAGGED);
-
-            Application updated = transitionService.transition(
-                    app,
-                    ApplicationStatus.OIDB_CRITERIA_REJECTED,
-                    "OIDB rejected due to academic criteria mismatch"
-            );
-
-            return applicationMapper.map(updated);
-        }
-
-
-        // 3️⃣ OIDB kullanıcı reddi
-        if (!valid) {
-
-            app.setValidationStatus(ValidationStatus.FLAGGED);
-
-            Application updated = transitionService.transition(
-                    app,
-                    ApplicationStatus.OIDB_REJECTED,
-                    "OIDB manually rejected application"
-            );
-
-            return applicationMapper.map(updated);
-        }
-
-        // 4️⃣ Kriterler OK → YDYO’ya gönder
-        app.setValidationStatus(ValidationStatus.VALID);
+        documentService.validateMandatoryDocuments(app);
 
         Application updated = transitionService.transition(
                 app,
                 ApplicationStatus.OIDB_VALIDATED,
-                "OIDB validated application after YDYO approval and sent to faculty"
+                "OIDB validation completed – forwarded to Faculty"
         );
 
         return applicationMapper.map(updated);
@@ -278,13 +227,13 @@ public class ApplicationService {
                 (statuses == null || statuses.isEmpty())
                         ? List.of(
                         OidbStatus.SUBMITTED,
-                        OidbStatus.OIDB_CRITERIA_REJECTED,
                         OidbStatus.YDYO_APPROVED,
                         OidbStatus.YDYO_FAILED,
                         OidbStatus.FACULTY_EVALUATED,
                         OidbStatus.FACULTY_RETURNED,
                         OidbStatus.YGK_APPROVED,
-                        OidbStatus.YGK_REJECTED
+                        OidbStatus.YGK_REJECTED,
+                        OidbStatus.YGK_WAITLISTED
                 )
                         : statuses;
         return applicationRepository.findByStatusInWithRelations(statuses)
@@ -357,6 +306,7 @@ public class ApplicationService {
 
         // 🔵 INTERNAL öğrenciler doğrudan YDYO_VALIDATED
         if (app.getStudent().getStudentType() == StudentType.INTERNAL) {
+            app.setEnglishResult(EnglishProficiencyResult.PASSED);
 
             return applicationMapper.map(
                     transitionService.transition(
@@ -371,6 +321,7 @@ public class ApplicationService {
                 documentService.hasDocument(app.getAppId(), DocumentType.ENGLISH_CERTIFICATE);
 
         if (!hasCert && app.getStudent().getStudentType().equals(StudentType.EXTERNAL)) {
+            app.setEnglishResult(EnglishProficiencyResult.EXAM_REQUIRED);
             return applicationMapper.map(
                     transitionService.transition(app,
                             ApplicationStatus.YDYO_EXAM_REQUIRED,
@@ -383,7 +334,7 @@ public class ApplicationService {
         boolean passed = englishScoreService.isValid(cert);
 
         if (!passed) {
-
+            app.setEnglishResult(EnglishProficiencyResult.EXAM_REQUIRED);
             return applicationMapper.map(
                     transitionService.transition(app,
                             ApplicationStatus.YDYO_EXAM_REQUIRED,
@@ -391,6 +342,7 @@ public class ApplicationService {
             );
         }
 
+        app.setEnglishResult(EnglishProficiencyResult.PASSED);
         return applicationMapper.map(
                 transitionService.transition(app,
                         ApplicationStatus.YDYO_APPROVED,
@@ -407,23 +359,22 @@ public class ApplicationService {
             throw new BusinessException("YDYO-402",
                     "Only exam required applications can be finalized");
 
-        ApplicationStatus target = passed
-                ? ApplicationStatus.YDYO_APPROVED
-                : ApplicationStatus.YDYO_FAILED;
-
-        String reason = passed
-                ? "Placement exam passed"
-                : "Placement exam failed";
+        app.setEnglishResult(passed
+                ? EnglishProficiencyResult.PASSED
+                : EnglishProficiencyResult.FAILED);
 
         return applicationMapper.map(
-                transitionService.transition(app, target, reason)
+                transitionService.transition(app,
+                        ApplicationStatus.YDYO_APPROVED,
+                        passed ? "Placement exam passed"
+                                : "Placement exam failed")
         );
     }
+
 
     public List<ApplicationResponseDto> getFinalizedResults(Boolean published) {
 
         List<ApplicationStatus> terminalStatuses = List.of(
-                ApplicationStatus.OIDB_REJECTED,
                 ApplicationStatus.YGK_APPROVED,
                 ApplicationStatus.YGK_REJECTED,
                 ApplicationStatus.YGK_WAITLISTED
@@ -439,7 +390,6 @@ public class ApplicationService {
     public List<Application> findFinalResults() {
 
         List<ApplicationStatus> terminalStatuses = List.of(
-                ApplicationStatus.OIDB_REJECTED,
                 ApplicationStatus.YGK_APPROVED,
                 ApplicationStatus.YGK_REJECTED,
                 ApplicationStatus.YGK_WAITLISTED

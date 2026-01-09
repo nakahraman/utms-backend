@@ -31,8 +31,7 @@ public class ApplicationStatusTransitionService {
 
                     // --- OIDB VALIDATION ---
                     Map.entry(ApplicationStatus.SUBMITTED,
-                            Set.of(ApplicationStatus.SENT_TO_YDYO,
-                                    ApplicationStatus.OIDB_CRITERIA_REJECTED)),
+                            Set.of(ApplicationStatus.SENT_TO_YDYO)),
                     
                     Map.entry(ApplicationStatus.SENT_TO_YDYO,
                             Set.of(ApplicationStatus.YDYO_APPROVED,
@@ -40,15 +39,10 @@ public class ApplicationStatusTransitionService {
 
                     // --- YDYO ---
                     Map.entry(ApplicationStatus.YDYO_EXAM_REQUIRED,
-                            Set.of(ApplicationStatus.YDYO_APPROVED,
-                                    ApplicationStatus.YDYO_FAILED)),
+                            Set.of(ApplicationStatus.YDYO_APPROVED)),
 
                     Map.entry(ApplicationStatus.YDYO_APPROVED,
-                            Set.of(ApplicationStatus.OIDB_VALIDATED,
-                                    ApplicationStatus.OIDB_REJECTED)),
-
-                    Map.entry(ApplicationStatus.YDYO_FAILED,
-                            Set.of(ApplicationStatus.OIDB_REJECTED)),
+                            Set.of(ApplicationStatus.OIDB_VALIDATED)),
 
                     // --- FACULTY ---
                     Map.entry(ApplicationStatus.OIDB_VALIDATED,
@@ -69,16 +63,13 @@ public class ApplicationStatusTransitionService {
                     Map.entry(ApplicationStatus.SENT_TO_YGK,
                             Set.of(ApplicationStatus.YGK_APPROVED,
                                     ApplicationStatus.YGK_WAITLISTED,
-                                    ApplicationStatus.YGK_REJECTED)),
+                                    ApplicationStatus.YGK_REJECTED,
+                                    ApplicationStatus.ACADEMICALLY_INELIGIBLE)),
 
                     // --- OIDB PUBLISH RESULTS ---
                     Map.entry(ApplicationStatus.YGK_APPROVED,
                             Set.of(ApplicationStatus.RESULT_PUBLISHED)),
                     Map.entry(ApplicationStatus.YGK_WAITLISTED,
-                            Set.of(ApplicationStatus.RESULT_PUBLISHED)),
-                    Map.entry(ApplicationStatus.OIDB_REJECTED,
-                            Set.of(ApplicationStatus.RESULT_PUBLISHED)),
-                    Map.entry(ApplicationStatus.OIDB_CRITERIA_REJECTED,
                             Set.of(ApplicationStatus.RESULT_PUBLISHED)),
                     Map.entry(ApplicationStatus.YGK_REJECTED,
                             Set.of(ApplicationStatus.RESULT_PUBLISHED)),

@@ -36,9 +36,8 @@ public class OidbController {
     @PreAuthorize("hasRole('OIDB')")
     @PostMapping("/send-to-faculty")
     @Operation(summary = "Validate application", description = "Oidb validates application")
-    public ApplicationResponseDto validate(@RequestParam Long appId,
-                                           @RequestParam boolean valid) {
-        return oidbService.oidbValidateApplication(appId, valid);
+    public ApplicationResponseDto validate(@RequestParam Long appId) {
+        return oidbService.oidbValidateApplication(appId);
     }
 
     @PreAuthorize("hasRole('OIDB')")

@@ -2,6 +2,7 @@ package com.utms.backend.model.entities;
 
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.enums.Decision;
+import com.utms.backend.model.enums.EnglishProficiencyResult;
 import com.utms.backend.model.enums.ValidationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -55,6 +56,11 @@ public class Application {
 
     @Column(name = "is_published")
     private boolean published;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "english_result")
+    private EnglishProficiencyResult englishResult;
+
 
 }
 

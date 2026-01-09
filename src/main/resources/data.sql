@@ -65,12 +65,13 @@ INSERT INTO department_allowed_semesters (dept_id, semester) VALUES
 -------------------------------------------------------
 -- STUDENTS
 INSERT INTO students
-(student_id, dept_id, gpa, exam_score, student_type, user_id)
+(student_id, dept_id, gpa, exam_score, success_rank, student_type, user_id)
 VALUES
-(1, 1, 3.05, 78.0, 'INTERNAL', 1),
-(2, 2, 3.40, 85.0, 'INTERNAL', 2),
-(3, 3, 2.95, 72.0, 'EXTERNAL', 3),
-(4, 5, 3.60, 90.0, 'INTERNAL', 4);
+(1, 1, 3.05, 78.0, 15000, 'INTERNAL', 1),
+(2, 2, 3.40, 85.0, 12000, 'INTERNAL', 2),
+(3, 3, 2.95, 72.0, 35000, 'EXTERNAL', 3),
+(4, 5, 3.60, 90.0, 8000,  'INTERNAL', 4);
+
 
 
 

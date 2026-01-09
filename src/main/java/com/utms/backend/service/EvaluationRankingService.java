@@ -1,10 +1,12 @@
 package com.utms.backend.service;
 
+import com.utms.backend.exception.BusinessException;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Department;
 import com.utms.backend.model.entities.Evaluation;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.enums.Decision;
+import com.utms.backend.model.enums.ValidationStatus;
 import com.utms.backend.repository.EvaluationRepository;
 import com.utms.backend.security.SecurityUtil;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
@@ -21,6 +23,7 @@ public class EvaluationRankingService {
     private final EvaluationRepository evaluationRepository;
     private final DepartmentService departmentService;
     private final ApplicationStatusTransitionService transitionService;
+    private final YgkAcademicEligibilityService ygkAcademicEligibilityService;
 
 
     @Transactional
@@ -41,6 +44,22 @@ public class EvaluationRankingService {
         for (Evaluation ev : evals) {
 
             Application app = ev.getApplication();
+
+            //  BURASI – AKADEMİK UYGUNLUK KONTROLÜ
+            try {
+                ygkAcademicEligibilityService.validate(app, dept);
+            } catch (BusinessException ex) {
+
+                app.setValidationStatus(ValidationStatus.FLAGGED);
+
+                transitionService.transition(app,
+                        ApplicationStatus.ACADEMICALLY_INELIGIBLE,
+                        ex.getMessage());
+                continue;   // ❗ bu başvuru sıralamaya GİRMEZ
+            }
+
+            //  sadece uygun olanlar aşağıya iner
+            app.setValidationStatus(ValidationStatus.VALID);
             ev.setRank(rank);
             ev.setYgkMemberId(currentYgkMemberId);
 

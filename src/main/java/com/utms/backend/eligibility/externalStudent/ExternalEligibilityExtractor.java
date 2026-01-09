@@ -7,7 +7,7 @@ import com.utms.backend.model.entities.AcademicEligibilitySnapshot;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.TransferDocument;
 import com.utms.backend.model.enums.DocumentType;
-import com.utms.backend.service.TransferDocumentService;
+import com.utms.backend.service.DocumentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +17,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ExternalEligibilityExtractor
         implements AcademicEligibilityExtractor {
-    private final TransferDocumentService documentService;
+    private final DocumentService documentService;
     private final MockDocumentParserService parser;
 
     @Override

@@ -1,9 +1,8 @@
 package com.utms.backend.controller;
 
 import com.utms.backend.model.dto.TransferDocumentResponseDto;
-import com.utms.backend.model.entities.TransferDocument;
 import com.utms.backend.model.enums.DocumentType;
-import com.utms.backend.service.TransferDocumentService;
+import com.utms.backend.service.DocumentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
@@ -20,7 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 @AllArgsConstructor
 public class TransferDocumentController {
 
-    private final TransferDocumentService documentService;
+    private final DocumentService documentService;
 
 
 

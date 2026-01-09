@@ -24,8 +24,8 @@ public class OidbService {
         return applicationService.getOidbInbox(statuses);
     }
 
-    public ApplicationResponseDto oidbValidateApplication(Long appId, boolean valid) {
-        return applicationService.oidbValidateApplication(appId, valid);
+    public ApplicationResponseDto oidbValidateApplication(Long appId) {
+        return applicationService.oidbValidateApplication(appId);
     }
 
     @Transactional

@@ -41,9 +41,7 @@ public class ResultPublishService {
 
             String message;
 
-            if (app.getStatus() == ApplicationStatus.OIDB_REJECTED)
-                message = "Başvurunuz OIDB tarafından reddedilmiştir.";
-            else if (app.getStatus() == ApplicationStatus.YGK_APPROVED)
+            if (app.getStatus() == ApplicationStatus.YGK_APPROVED)
                 message = "Başvurunuz ASİL olarak kabul edilmiştir.";
             else if (app.getStatus() == ApplicationStatus.YGK_WAITLISTED)
                 message = "Başvurunuz yedek listesine alınmıştır.";
