@@ -28,7 +28,7 @@ public class AuthService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new BusinessException("AUTH-404", "Kullanıcı bulunamadı"));
 
-        if (user.getUserSource() == UserSource.UBYS) {
+        if (user.getUserSource() == UserSource.UBYS) { // INTERNAL kullanıcı
 
             if (!externalUbysClient.authenticate(username, password)) {
                 throw new BusinessException("AUTH-401", "UBYS doğrulama başarısız");

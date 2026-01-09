@@ -56,7 +56,7 @@ public class ApplicationService {
     @Transactional
     public ApplicationResponseDto submitExternalApplication(Long appId) {
 
-        Application app = authorize(appId);
+        Application app = validateDraftSubmissionOwnership(appId);
 
         checkCanSubmit(app.getStudent().getStudentId(), app.getDepartment().getDeptId());
 
@@ -86,7 +86,47 @@ public class ApplicationService {
         studentService.save(st);
     }
 
-    private Application authorize(Long appId) {
+    // ---------- INTERNAL SUBMIT ----------
+
+    @Transactional
+    public ApplicationResponseDto submitInternalApplication(Long userId, Long appId) {
+
+        Student student = studentService.findStudentIdByUserId(userId)
+                .orElseThrow(() ->
+                        new BusinessException("STU-404",
+                                "Bu kullanıcıya ait öğrenci profili bulunamadı"));
+
+        Application app = validateDraftSubmissionOwnership(appId);
+
+        validateInternalStudentNotSameDepartment(student, app);
+
+        app.setGpa(student.getGpa());
+        checkCanSubmit(student.getStudentId(), app.getDepartment().getDeptId());
+
+        finalizeSubmission(app, "Internal application submitted");
+
+        return applicationMapper.map(app);
+    }
+
+    private void validateInternalStudentNotSameDepartment(Student student, Application app) {
+
+        if (student.getDepartment() == null || app.getDepartment() == null) {
+            throw new BusinessException("APP-INT-000",
+                    "Bölüm bilgileri eksik olduğu için başvuru doğrulanamadı.");
+        }
+
+        if (student.getDepartment().getDeptId()
+                .equals(app.getDepartment().getDeptId())) {
+
+            throw new BusinessException("APP-INT-001",
+                    "Kendi bölümünüze yatay geçiş başvurusu yapamazsınız.");
+        }
+    }
+
+
+    // ---------- DOMAIN RULES ----------
+
+    private Application validateDraftSubmissionOwnership(Long appId) {
 
         Long userId = SecurityUtil.getCurrentUserId();
         Application app = findApplicationById(appId);
@@ -99,30 +139,6 @@ public class ApplicationService {
 
         return app;
     }
-
-
-    // ---------- INTERNAL SUBMIT ----------
-
-    @Transactional
-    public ApplicationResponseDto submitInternalApplication(Long userId, Long appId) {
-
-        Student student = studentService.findStudentIdByUserId(userId)
-                .orElseThrow(() ->
-                        new BusinessException("STU-404",
-                                "Bu kullanıcıya ait öğrenci profili bulunamadı"));
-
-        Application app = authorize(appId);
-
-        app.setGpa(student.getGpa());
-        checkCanSubmit(student.getStudentId(), app.getDepartment().getDeptId());
-
-        finalizeSubmission(app, "Internal application submitted");
-
-        return applicationMapper.map(app);
-    }
-
-
-    // ---------- DOMAIN RULES ----------
 
     private void checkCanSubmit(Long studentId, Long deptId) {
 
