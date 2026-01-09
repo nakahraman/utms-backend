@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -31,11 +32,9 @@ public class ApplicationService {
     private final ExternalAcademicSnapshotClient academicSnapshotClient;
     private final ExternalEligibilityExtractor externalEligibilityExtractor;
     private final InternalEligibilityExtractor internalEligibilityExtractor;
-    private final EnglishScoreService englishScoreService;
+    private final EnglishCertificateService englishCertificateService;
     private final EvaluationService evaluationService;
     private final StudentService studentService;
-    private final UserService userService;
-
     private final List<ApplicationStatus> ALLOWED_FOR_NEW_APPLICATION = List.of(ApplicationStatus.DRAFT);
 
 
@@ -70,11 +69,28 @@ public class ApplicationService {
         AcademicEligibilitySnapshot snapshot = externalEligibilityExtractor.extract(app);
         app.setGpa(snapshot.getGpa());
 
+        applyExternalAcademicSnapshotToStudent(app, snapshot);
+
         finalizeSubmission(app, "External application submitted");
 
         sendSubmitNotification(app);
 
+
         return applicationMapper.map(app);
+    }
+
+
+    @Transactional
+    public void applyExternalAcademicSnapshotToStudent(Application app, AcademicEligibilitySnapshot s) {
+
+        if (app.getStudent().getStudentType() != StudentType.EXTERNAL) return;
+
+        Student st = app.getStudent();
+        st.setGpa(s.getGpa());
+        st.setExamScore(s.getExamScore());
+        st.setSuccessRank(s.getSuccessRank());
+
+        studentService.save(st);
     }
 
     private Application authorize(Long appId) {
@@ -265,7 +281,7 @@ public class ApplicationService {
 
     public List<Application> findByStatusInAndFacultyIdForEval(List<ApplicationStatus> statuses, Long facultyId) {
         return applicationRepository
-                .findFacultyInbox(statuses, facultyId);
+                .getFaxultyInbox(statuses, facultyId);
     }
 
     public ApplicationResponseDto getMyResult() {
@@ -317,11 +333,14 @@ public class ApplicationService {
             );
         }
 
-        boolean hasCert =
-                documentService.hasDocument(app.getAppId(), DocumentType.ENGLISH_CERTIFICATE);
+        //EXTERNAL STUDENT
+        Optional<EnglishCertificate> certOpt =
+                englishCertificateService.getEnglishCertificate(app.getAppId());
 
-        if (!hasCert && app.getStudent().getStudentType().equals(StudentType.EXTERNAL)) {
+        if (certOpt.isEmpty()) {
+
             app.setEnglishResult(EnglishProficiencyResult.EXAM_REQUIRED);
+
             return applicationMapper.map(
                     transitionService.transition(app,
                             ApplicationStatus.YDYO_EXAM_REQUIRED,
@@ -329,9 +348,8 @@ public class ApplicationService {
             );
         }
 
-        EnglishCertificate cert = documentService.getEnglishCertificate(app.getAppId());
-
-        boolean passed = englishScoreService.isValid(cert);
+        EnglishCertificate cert = certOpt.get();
+        boolean passed = englishCertificateService.isValid(cert);
 
         if (!passed) {
             app.setEnglishResult(EnglishProficiencyResult.EXAM_REQUIRED);
@@ -392,7 +410,8 @@ public class ApplicationService {
         List<ApplicationStatus> terminalStatuses = List.of(
                 ApplicationStatus.YGK_APPROVED,
                 ApplicationStatus.YGK_REJECTED,
-                ApplicationStatus.YGK_WAITLISTED
+                ApplicationStatus.YGK_WAITLISTED,
+                ApplicationStatus.ACADEMICALLY_INELIGIBLE
         );
 
         return applicationRepository

@@ -18,16 +18,17 @@ public class EnglishCertificate {
     private Long certId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private EnglishCertType type;   // IELTS, TOEFL, ...
 
-    @Column(nullable = false)
     private Double score;
 
-    @Column(nullable = false)
     private String documentNo;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", nullable = false)
     private Application application;
+
+    private String fileName;
+
+    private String filePath;
 }

@@ -1,6 +1,9 @@
 package com.utms.backend.service;
 
+import com.utms.backend.eligibility.externalStudent.ExternalEligibilityExtractor;
 import com.utms.backend.exception.BusinessException;
+import com.utms.backend.model.entities.AcademicEligibilitySnapshot;
+import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Student;
 import com.utms.backend.model.entities.User;
 import com.utms.backend.model.enums.StudentType;
@@ -51,28 +54,7 @@ public class StudentService {
         return studentRepository.findByUserUserId(userId);
     }
 
-
-    @Transactional
-    public Student getOrCreateStudent(Long userId) {
-
-        return studentRepository.findByUser_UserId(userId)
-                .orElseGet(() -> createExternalStudent(userId));
+    public void save(Student student) {
+        studentRepository.save(student);
     }
-
-    private Student createExternalStudent(Long userId) {
-
-        User user = userService.findUserById(userId)
-                .orElseThrow(() -> new BusinessException("USR-404","User not found"));
-
-        if (user.getUserSource() != UserSource.EXTERNAL)
-            throw new BusinessException("STU-403","Internal student must exist beforehand");
-
-        Student student = new Student();
-        student.setUser(user);
-        student.setStudentType(StudentType.EXTERNAL);
-
-        return studentRepository.save(student);
-    }
-
-
 }

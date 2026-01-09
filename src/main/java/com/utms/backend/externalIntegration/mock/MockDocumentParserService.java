@@ -1,6 +1,8 @@
 package com.utms.backend.externalIntegration.mock;
 
+import com.utms.backend.model.entities.EnglishCertificate;
 import com.utms.backend.model.entities.TransferDocument;
+import com.utms.backend.model.enums.EnglishCertType;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,23 +14,35 @@ public class MockDocumentParserService {
 
         String name = doc.getFileName().toLowerCase();
 
-        if (name.contains("good")) {
-            data.setGpa(3.45);
+        if (name.contains("high")) {
+
+            data.setGpa(3.60);
             data.setCompletedSemesters(4);
             data.setHasFailedCourse(false);
             data.setHasLeaveSemester(false);
-        } else {
+
+        } else if (name.contains("mid")) {
+
+            data.setGpa(2.85);
+            data.setCompletedSemesters(3);
+            data.setHasFailedCourse(false);
+            data.setHasLeaveSemester(false);
+
+        } else { // low
+
             data.setGpa(2.10);
             data.setCompletedSemesters(2);
             data.setHasFailedCourse(true);
             data.setHasLeaveSemester(true);
         }
 
-        // Target semester transcript'ten türetilir
+        // 🎯 Target semester transcript'ten türetilir
         int targetSemester;
 
         if (data.getCompletedSemesters() >= 4) {
             targetSemester = 5;
+        } else if (data.getCompletedSemesters() >= 3) {
+            targetSemester = 4;
         } else if (data.getCompletedSemesters() >= 2) {
             targetSemester = 3;
         } else {
@@ -40,6 +54,7 @@ public class MockDocumentParserService {
         return data;
     }
 
+
     public MockYksData parseYks(TransferDocument doc) {
 
         MockYksData data = new MockYksData();
@@ -48,33 +63,38 @@ public class MockDocumentParserService {
 
         if (name.contains("high")) {
             data.setSuccessRank(12000);
+            data.setExamScore(475.75);   // 100–500 aralığında
+        } else if (name.contains("mid")) {
+            data.setSuccessRank(35000);
+            data.setExamScore(425.40);
         } else {
             data.setSuccessRank(65000);
+            data.setExamScore(385.10);
         }
 
         return data;
     }
 
-    public MockEnglishCertData parseEnglish(TransferDocument doc) {
+
+    public MockEnglishCertData parseEnglishCertificate(EnglishCertificate cert) {
 
         MockEnglishCertData data = new MockEnglishCertData();
-
-        String name = doc.getFileName().toLowerCase();
+        String name = cert.getFileName().toLowerCase();
 
         if (name.contains("ielts")) {
-            data.setHasCertificate(true);
-            data.setType("IELTS");
+            data.setType(EnglishCertType.IELTS);
             data.setScore(6.5);
-
-        } else if (name.contains("toefl")) {
-            data.setHasCertificate(true);
-            data.setType("TOEFL");
-            data.setScore(82);
-
-        } else {
-            data.setHasCertificate(false);
-            data.setType(null);
-            data.setScore(0);
+            data.setDocumentNo("IELTS-2026-001");
+        }
+        else if (name.contains("toefl")) {
+            data.setType(EnglishCertType.TOEFL);
+            data.setScore(82.0);
+            data.setDocumentNo("TOEFL-2026-002");
+        }
+        else {
+            data.setType(EnglishCertType.YDS);
+            data.setScore(75.0);
+            data.setDocumentNo("YDS-2026-003");
         }
 
         return data;

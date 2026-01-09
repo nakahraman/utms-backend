@@ -79,6 +79,19 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
                                        @Param("facultyId") Long facultyId);
 
 
+    @Query("""
+                select a
+                from Application a
+                join a.department d
+                join d.faculty f
+                where a.status in :statuses
+                  and f.facultyId = :facultyId
+            """)
+    List<Application> getFaxultyInbox(
+            @Param("statuses") List<ApplicationStatus> statuses,
+            @Param("facultyId") Long facultyId);
+
+
     Optional<Application> findByStudentStudentIdAndStatus(Long studentId, ApplicationStatus resultPublished);
 
     @Query("""

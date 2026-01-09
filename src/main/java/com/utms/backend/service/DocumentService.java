@@ -2,6 +2,8 @@ package com.utms.backend.service;
 
 import com.utms.backend.exception.BusinessException;
 import com.utms.backend.externalIntegration.DocumentVerificationService;
+import com.utms.backend.externalIntegration.mock.MockDocumentParserService;
+import com.utms.backend.externalIntegration.mock.MockEnglishCertData;
 import com.utms.backend.mapper.TransferDocumentMapper;
 import com.utms.backend.model.dto.TransferDocumentResponseDto;
 import com.utms.backend.model.entities.Application;
@@ -44,6 +46,7 @@ public class DocumentService {
     private final DocumentVerificationService documentVerificationService;
     private final TransferDocumentMapper transferDocumentMapper;
     private final EnglishCertificateRepository englishCertificateRepository;
+    private final MockDocumentParserService mockDocumentParserService;
 
     private final String uploadDir = "uploads/";
 
@@ -72,6 +75,10 @@ public class DocumentService {
 
             documentRepository.deleteByApplication_AppIdAndDocumentType(appId, documentType);
 
+            if (documentType == DocumentType.ENGLISH_CERTIFICATE) {
+                englishCertificateRepository.deleteByApplication_AppId(appId);
+            }
+
             String ext = Objects.requireNonNull(file.getOriginalFilename())
                     .substring(file.getOriginalFilename().lastIndexOf("."));
 
@@ -90,9 +97,27 @@ public class DocumentService {
             doc.setApplication(application);
             doc.setDocumentType(documentType);
             doc.setFileName(file.getOriginalFilename());
-            doc.setFilePath(hashedName);   // ← SADECE LOGICAL PATH
+            doc.setFilePath(hashedName);
 
-            return transferDocumentMapper.map(documentRepository.save(doc));
+            TransferDocument savedDoc = documentRepository.save(doc);
+
+            if (documentType == DocumentType.ENGLISH_CERTIFICATE) {
+
+                EnglishCertificate cert = new EnglishCertificate();
+                cert.setApplication(application);
+                cert.setFilePath(hashedName);
+                cert.setFileName(file.getOriginalFilename());
+
+                MockEnglishCertData parsedEnglishCertificate = mockDocumentParserService.parseEnglishCertificate(cert);
+
+                cert.setType(parsedEnglishCertificate.getType());
+                cert.setScore(parsedEnglishCertificate.getScore());
+                cert.setDocumentNo(parsedEnglishCertificate.getDocumentNo());
+
+                englishCertificateRepository.save(cert);
+            }
+
+            return transferDocumentMapper.map(documentRepository.save(savedDoc));
 
         } catch (IOException ex) {
 
@@ -176,15 +201,6 @@ public class DocumentService {
 
             throw new BusinessException("SYS-500", "Mock document generation failed.");
         }
-    }
-
-
-    public EnglishCertificate getEnglishCertificate(Long appId) {
-
-        return englishCertificateRepository.findByApplication_AppId(appId)
-                .orElseThrow(() ->
-                        new BusinessException("DOC-404",
-                                "English certificate not found for application"));
     }
 
 

@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/documents")
 @Tag(name = "Documents", description = "Transfer document APIs")
 @AllArgsConstructor
-public class TransferDocumentController {
+public class DocumentController {
 
     private final DocumentService documentService;
 

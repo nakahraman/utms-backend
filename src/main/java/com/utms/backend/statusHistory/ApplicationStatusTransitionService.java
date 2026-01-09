@@ -73,6 +73,8 @@ public class ApplicationStatusTransitionService {
                             Set.of(ApplicationStatus.RESULT_PUBLISHED)),
                     Map.entry(ApplicationStatus.YGK_REJECTED,
                             Set.of(ApplicationStatus.RESULT_PUBLISHED)),
+                    Map.entry(ApplicationStatus.ACADEMICALLY_INELIGIBLE,
+                            Set.of(ApplicationStatus.RESULT_PUBLISHED)),
 
 
                     // --- TERMINAL ---

@@ -45,12 +45,16 @@ public class EvaluationRankingService {
 
             Application app = ev.getApplication();
 
-            //  BURASI – AKADEMİK UYGUNLUK KONTROLÜ
+            //  BURASI AKADEMİK UYGUNLUK KONTROLÜ
             try {
                 ygkAcademicEligibilityService.validate(app, dept);
+
             } catch (BusinessException ex) {
 
                 app.setValidationStatus(ValidationStatus.FLAGGED);
+                ev.setDecision(Decision.REJECTED);
+                app.setDecision(Decision.REJECTED);
+                ev.setYgkMemberId(currentYgkMemberId);
 
                 transitionService.transition(app,
                         ApplicationStatus.ACADEMICALLY_INELIGIBLE,

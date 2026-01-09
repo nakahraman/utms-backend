@@ -58,7 +58,7 @@ public class FacultyService {
 
 
     @Transactional
-    public List<EvaluationResponseDto> evaluateFacultyApplications(int quota) {
+    public List<EvaluationResponseDto> evaluateFacultyApplications() {
 
         Long facultyId = SecurityUtil.getCurrentUserFacultyId();
 
@@ -69,7 +69,7 @@ public class FacultyService {
                 applicationService.findByStatusInAndFacultyIdForEval(statuses, facultyId);
 
         // Skorlama + sıralama + FACULTY_EVALUATED
-        return evaluationService.evaluateApplications(apps, quota);
+        return evaluationService.evaluateApplications(apps);
     }
 
     @Transactional

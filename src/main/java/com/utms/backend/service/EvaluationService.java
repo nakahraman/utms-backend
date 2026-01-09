@@ -60,7 +60,7 @@ public class EvaluationService {
     }
 
     @Transactional
-    public List<EvaluationResponseDto> evaluateApplications(List<Application> apps, int quota) {
+    public List<EvaluationResponseDto> evaluateApplications(List<Application> apps) {
 
         evaluationRepository.deleteByApplicationIn(apps);
 
@@ -73,29 +73,19 @@ public class EvaluationService {
             Evaluation ev = new Evaluation();
             ev.setApplication(app);
             ev.setScore(score);
-            evaluationRepository.save(ev);
-        }
-
-        List<Evaluation> all = evaluationRepository.findByApplicationIn(apps);
-
-        all.sort(
-                Comparator.comparing(
-                        Evaluation::getScore,
-                        Comparator.nullsLast(Comparator.reverseOrder())
-                )
-        );
-
-        int rank = 1;
-        for (Evaluation ev : all) {
-            ev.setRank(rank++);
+            ev.setRank(null);
             ev.setDecision(null);
+
             evaluationRepository.save(ev);
 
-            transitionService.transition(ev.getApplication(),
+            transitionService.transition(app,
                     ApplicationStatus.FACULTY_EVALUATED,
-                    "Faculty evaluated application");
+                    "Faculty preliminary evaluation completed");
         }
 
-        return all.stream().map(evaluationMapper::map).toList();
+        return evaluationRepository.findByApplicationIn(apps)
+                .stream()
+                .map(evaluationMapper::map)
+                .toList();
     }
 }

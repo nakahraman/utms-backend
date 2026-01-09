@@ -47,8 +47,11 @@ public class ResultPublishService {
                 message = "Başvurunuz yedek listesine alınmıştır.";
             else if (app.getStatus() == ApplicationStatus.YGK_REJECTED)
                 message = "Başvurunuz YGK tarafından reddedilmiştir.";
+            else if (app.getStatus() == ApplicationStatus.ACADEMICALLY_INELIGIBLE)
+                message = "Başvurunuz akademik kriterleri sağlamadığı için değerlendirmeye alınmamıştır.";
             else
                 message = "Başvurunuz sonuçlandırılmıştır.";
+
 
             Application updated = transitionService.transition(
                     app,

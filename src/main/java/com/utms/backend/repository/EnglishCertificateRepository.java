@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface EnglishCertificateRepository extends JpaRepository<EnglishCertificate, Long> {
 
     Optional<EnglishCertificate> findByApplication_AppId(Long appId);
+
+    void deleteByApplication_AppId(Long appId);
 }

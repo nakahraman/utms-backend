@@ -32,8 +32,8 @@ public class FacultyController {
     @PreAuthorize("hasRole('FACULTY')")
     @PostMapping("/evaluate")
     @Operation(summary = "Send to YGK(department)", description = "Faculty forwards application to YGK(department)")
-    public List<EvaluationResponseDto> evaluate(@RequestParam int quota) {
-        return facultyService.evaluateFacultyApplications(quota);
+    public List<EvaluationResponseDto> evaluate() {
+        return facultyService.evaluateFacultyApplications();
     }
 
     @PreAuthorize("hasRole('FACULTY')")

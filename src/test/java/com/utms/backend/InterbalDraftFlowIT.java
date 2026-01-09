@@ -47,10 +47,12 @@ public class InterbalDraftFlowIT {
     @Test
     void externalDraftFlow() throws Exception {
 
-        mockDocumentVerification();
+       mockDocumentVerification();
         login();
         createDraft();
         submitApplication();
+
+
 
 
         //oidb
