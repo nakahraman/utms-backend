@@ -47,7 +47,20 @@ class ExternalDraftFlowIT {
     private DocumentVerificationService documentVerificationService;
 
 
+/*
+Aşağıdaki şekilde kullan
+    public ApplicationResponseDto getMyResult() {
 
+     //   Long studentId = SecurityUtil.getCurrentStudentId();
+
+        Application app = applicationRepository
+                .findByStudentStudentIdAndStatus(5L,
+                        ApplicationStatus.RESULT_PUBLISHED)
+                .orElseThrow(() -> new BusinessException("RES-404", "Sonuç bulunamadı"));
+
+        return applicationMapper.map(app);
+    }
+ */
 
     @Test
     void externalDraftFlow() throws Exception {
@@ -137,8 +150,8 @@ class ExternalDraftFlowIT {
         RegisterRequest req = new RegisterRequest(
                 "std101",
                 "1",
-                "ali@test.com",
-                "Veli"
+                "nadegati@gmail.com",
+                "Nazmiye Kahraman"
         );
 
         mockMvc.perform(post("/auth/register-external")

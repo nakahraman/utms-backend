@@ -69,9 +69,6 @@ public class ApplicationService {
 
         finalizeSubmission(app, "External application submitted");
 
-        sendSubmitNotification(app);
-
-
         return applicationMapper.map(app);
     }
 
@@ -121,8 +118,6 @@ public class ApplicationService {
 
         finalizeSubmission(app, "Internal application submitted");
 
-        sendSubmitNotification(app);
-
         return applicationMapper.map(app);
     }
 
@@ -141,13 +136,6 @@ public class ApplicationService {
 
         transitionService.transition(app, ApplicationStatus.SUBMITTED, reason);
     }
-
-    private void sendSubmitNotification(Application app) {
-
-        notificationService.create(app, ApplicationStatus.SUBMITTED.toString(),
-                "Yatay geçiş başvurunuz başarıyla alınmıştır. Başvuru No: " + app.getAppId());
-    }
-
 
     public List<ApplicationResponseDto> getApplicationsByStudent(Long studentId) {
         return applicationRepository.findAllByStudentWithRelations(studentId)

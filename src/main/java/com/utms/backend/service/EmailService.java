@@ -1,33 +1,62 @@
 package com.utms.backend.service;
 
+import com.utms.backend.model.entities.Application;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.time.format.DateTimeFormatter;
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    public void sendSafe(String to, String subject, String body) {
+    @Value("${mail.enabled:true}")
+    private boolean mailEnabled;
+
+    public void sendSafe(Application app, String decisionMessage) {
+
+        if (!mailEnabled) return;
+
         try {
-            send(to, subject, body);
-        } catch (Exception e) {
-            System.err.println("E-posta gönderilemedi [" + to + "]: " + e.getMessage());
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setTo(app.getStudent().getUser().getEmail());
+            msg.setSubject("UTMS - Yatay Geçiş Başvuru Sonucu");
+            msg.setText(buildResultMailBody(app, decisionMessage));
+            mailSender.send(msg);
+
+        } catch (Exception ex) {
+
+            System.out.println("EMAIL-SEND-FAILED"
+                               + "\n to= " + app.getStudent().getUser().getEmail()
+                               + "\n subject= UTMS - Yatay Geçiş Başvuru Sonucu"
+                               + "\n" + ex);
         }
     }
 
-    private void send(String to, String subject, String body) {
+    private String buildResultMailBody(Application app, String decisionMessage) {
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("oidb@gmail.com");
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(body);
+        String studentName = app.getStudent().getUser().getName();
+        String departmentName = app.getDepartment().getDeptName();
+        String submitDate = app.getSubmissionDate()
+                .toLocalDate()
+                .format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
 
-        mailSender.send(message);
-        System.out.println("Email başarıyla gönderildi: " + to);
+        return """
+            Sayın %s,
+
+            %s tarihinde %s bölümüne yapmış olduğunuz yatay geçiş başvurunuzun sonucu aşağıda bilgilerinize sunulmuştur.
+
+            Başvuru Sonucu:
+            %s
+
+            Detaylara UTMS sistemi üzerinden erişebilirsiniz.
+
+            İyi çalışmalar dileriz.
+            İYTE Öğrenci İşleri Daire Başkanlığı
+            """.formatted(studentName, submitDate, departmentName, decisionMessage);
     }
 }

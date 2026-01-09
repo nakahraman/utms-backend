@@ -3,7 +3,6 @@ package com.utms.backend.service;
 import com.utms.backend.exception.BusinessException;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.enums.ApplicationStatus;
-import com.utms.backend.model.enums.NotificationType;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -59,7 +58,7 @@ public class ResultPublishService {
 
             updated.setPublished(true);
 
-            notificationService.create(app, NotificationType.RESULT.toString(), message);
+            notificationService.create(app, ApplicationStatus.RESULT_PUBLISHED, message);
         }
     }
 }

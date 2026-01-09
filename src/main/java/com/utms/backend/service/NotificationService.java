@@ -2,40 +2,34 @@ package com.utms.backend.service;
 
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.Notification;
+import com.utms.backend.model.enums.ApplicationStatus;
+import com.utms.backend.model.enums.NotificationType;
 import com.utms.backend.repository.NotificationRepository;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final EmailService emailService;
 
-    public void create(Application app, String type, String message) {
+    public void create(Application app, ApplicationStatus type, String message) {
 
         Notification notif = new Notification();
         notif.setApplication(app);
-        notif.setType(type);
+        notif.setType(type.name());
         notif.setMessage(message);
         notif.setDateSent(LocalDateTime.now());
         notificationRepository.save(notif);
 
-        emailService.sendSafe(
-                app.getStudent().getUser().getEmail(),
-                resolveSubject(type),
-                message
-        );
+        if (type == ApplicationStatus.RESULT_PUBLISHED) {
+            emailService.sendSafe(app, message);
+        }
     }
 
-    private String resolveSubject(String type) {
-        return switch (type) {
-            case "SUBMIT"        -> "İYTE Yatay Geçiş Başvurunuz Alındı";
-            case "RESULT"        -> "İYTE Yatay Geçiş Başvuru Sonucu";
-            default              -> "İYTE Başvuru Bilgilendirme";
-        };
-    }
 }

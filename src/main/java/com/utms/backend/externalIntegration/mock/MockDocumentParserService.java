@@ -30,10 +30,10 @@ public class MockDocumentParserService {
 
         } else { // low
 
-            data.setGpa(2.10);
-            data.setCompletedSemesters(2);
-            data.setHasFailedCourse(true);
-            data.setHasLeaveSemester(true);
+            data.setGpa(3.60);
+            data.setCompletedSemesters(4);
+            data.setHasFailedCourse(false);
+            data.setHasLeaveSemester(false);
         }
 
         // 🎯 Target semester transcript'ten türetilir
@@ -68,8 +68,8 @@ public class MockDocumentParserService {
             data.setSuccessRank(35000);
             data.setExamScore(425.40);
         } else {
-            data.setSuccessRank(65000);
-            data.setExamScore(385.10);
+            data.setSuccessRank(12000);
+            data.setExamScore(475.75);
         }
 
         return data;
