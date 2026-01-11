@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "users")
 @Data
@@ -46,6 +48,9 @@ public class User {
 
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private Student student;
+
+    private Integer failedLoginAttempts = 0;
+    private LocalDateTime accountLockedUntil;
 
 
 }

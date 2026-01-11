@@ -60,4 +60,25 @@ public class EmailService {
             İYTE Öğrenci İşleri Daire Başkanlığı
             """.formatted(studentName, submitDate, departmentName, appId, decisionMessage);
     }
+
+    public void sendSafe(String to, String subject, String body) {
+
+        if (!mailEnabled) return;
+
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setTo(to);
+            msg.setSubject(subject);
+            msg.setText(body);
+            mailSender.send(msg);
+
+        } catch (Exception ex) {
+
+            System.out.println("EMAIL-SEND-FAILED"
+                               + "\n to= " + to
+                               + "\n subject= " + subject
+                               + "\n" + ex);
+        }
+    }
+
 }

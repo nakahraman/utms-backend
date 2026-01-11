@@ -13,12 +13,6 @@ public class DepartmentCriteria {
     private double minGpa;
     private int maxSuccessRank;
 
-    @ElementCollection
-    @CollectionTable(name = "department_allowed_semesters",
-            joinColumns = @JoinColumn(name = "dept_id"))
-    @Column(name = "semester")
-    private List<Integer> allowedSemesters;
-
     private boolean requiresAllCoursesPassed;
     private boolean requiresPortfolio;
 
@@ -26,7 +20,6 @@ public class DepartmentCriteria {
         DepartmentCriteriaDto dto = new DepartmentCriteriaDto();
         dto.setMinGpa(minGpa);
         dto.setMaxSuccessRank(maxSuccessRank);
-        dto.setAllowedSemesters(allowedSemesters);
         dto.setRequiresAllCoursesPassed(requiresAllCoursesPassed);
         dto.setRequiresPortfolio(requiresPortfolio);
         return dto;
