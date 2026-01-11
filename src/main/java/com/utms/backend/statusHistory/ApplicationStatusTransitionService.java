@@ -6,11 +6,14 @@ import com.utms.backend.exception.BusinessException;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.repository.ApplicationRepository;
+import com.utms.backend.security.SecurityUtil;
+import com.utms.backend.service.ApplicationService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -118,5 +121,9 @@ public class ApplicationStatusTransitionService {
         historyRepository.save(h);
 
         return saved;
+    }
+
+    public List<ApplicationStatusHistory> findApplicationByCharged(Long appId) {
+        return historyRepository.findByApplication_AppIdOrderByChangedAtDesc(appId);
     }
 }

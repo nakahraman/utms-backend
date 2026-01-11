@@ -8,6 +8,7 @@ import com.utms.backend.model.entities.*;
 import com.utms.backend.model.enums.*;
 import com.utms.backend.repository.ApplicationRepository;
 import com.utms.backend.security.SecurityUtil;
+import com.utms.backend.statusHistory.ApplicationStatusHistory;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -131,6 +132,10 @@ public class ApplicationService {
         Long userId = SecurityUtil.getCurrentUserId();
         Application app = findApplicationById(appId);
 
+        if (app.getStatus() != ApplicationStatus.DRAFT)
+            throw new BusinessException("APP-400",
+                    "Bu başvuru artık düzenlenemez.");
+
         if (!app.getStudent().getUser().getUserId().equals(userId))
             throw new BusinessException("SEC-403", "Bu başvuru size ait değil");
 
@@ -154,11 +159,20 @@ public class ApplicationService {
     }
 
     public List<ApplicationResponseDto> getApplicationsByStudent(Long studentId) {
-        return applicationRepository.findAllByStudentWithRelations(studentId)
-                .stream()
-                .map(applicationMapper::map)
-                .toList();
+
+        List<ApplicationResponseDto> list =
+                applicationRepository.findAllByStudentWithRelations(studentId)
+                        .stream()
+                        .map(applicationMapper::map)
+                        .toList();
+
+        if (list.isEmpty())
+            throw new BusinessException("APP-404",
+                    "Henüz hiç başvuru yapmadınız.");
+
+        return list;
     }
+
 
     public List<ApplicationResponseDto> getApplicationsByStatus(ApplicationStatus status) {
         return applicationRepository.findByStatus(status)
@@ -394,6 +408,32 @@ public class ApplicationService {
 
         return applicationRepository
                 .findFinalResults(terminalStatuses);
+    }
+
+    public ApplicationResponseDto getLatestMyApplication() {
+
+        Long studentId = SecurityUtil.getCurrentStudentId();
+
+        Application app = applicationRepository
+                .findTopByStudentStudentIdOrderByCreatedDateDesc(studentId)
+                .orElseThrow(() ->
+                        new BusinessException("APP-404", "Henüz hiç başvuru yapmadınız."));
+
+        return applicationMapper.map(app);
+    }
+
+    public List<ApplicationStatusHistory> getMyApplicationHistory(Long appId) {
+
+        Application app = findApplicationById(appId);
+
+        if (!app.getStudent().getStudentId()
+                .equals(SecurityUtil.getCurrentStudentId())) {
+
+            throw new BusinessException("SEC-403",
+                    "Bu başvuru size ait değil.");
+        }
+
+        return transitionService.findApplicationByCharged(appId);
     }
 
 }

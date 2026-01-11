@@ -54,4 +54,5 @@ public class StudentService {
     public void save(Student student) {
         studentRepository.save(student);
     }
+
 }

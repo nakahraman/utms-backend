@@ -78,4 +78,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
 
     boolean existsByStudent_StudentIdAndDepartment_DeptIdAndStatusNotIn(Long studentId, Long deptId, List<ApplicationStatus> allowedForNewApplication);
+
+    Optional<Application> findTopByStudentStudentIdOrderByCreatedDateDesc(Long studentId);
 }
