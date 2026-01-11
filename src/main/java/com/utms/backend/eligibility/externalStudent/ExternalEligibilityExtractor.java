@@ -24,17 +24,17 @@ public class ExternalEligibilityExtractor
     public AcademicEligibilitySnapshot extract(Application app) {
 
         TransferDocument transcript =
-                documentService.findDocument(app.getAppId(), DocumentType.TRANSCRIPT)
+                documentService.getTransferDocument(app.getAppId(), DocumentType.TRANSCRIPT)
                         .orElseThrow(() -> new BusinessException(
                                 "DOC-404", "Transcript belgesi bulunamadı"));
 
         TransferDocument yks =
-                documentService.findDocument(app.getAppId(), DocumentType.YKS_RESULT)
+                documentService.getTransferDocument(app.getAppId(), DocumentType.YKS_RESULT)
                         .orElseThrow(() -> new BusinessException(
                                 "DOC-405", "YKS sonuç belgesi bulunamadı"));
 
         Optional<TransferDocument> portfolioOpt =
-                documentService.findDocument(app.getAppId(), DocumentType.PORTFOLIO);
+                documentService.getTransferDocument(app.getAppId(), DocumentType.PORTFOLIO);
 
         var tData = parser.parseTranscript(transcript);
         var yData = parser.parseYks(yks);

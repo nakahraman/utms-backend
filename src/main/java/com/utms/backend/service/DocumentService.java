@@ -10,32 +10,23 @@ import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.entities.EnglishCertificate;
 import com.utms.backend.model.entities.TransferDocument;
 import com.utms.backend.model.enums.DocumentType;
-import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.repository.ApplicationRepository;
 import com.utms.backend.repository.EnglishCertificateRepository;
 import com.utms.backend.repository.TransferDocumentRepository;
+import com.utms.backend.security.SecurityUtil;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 @Service
 @AllArgsConstructor
 public class DocumentService {
@@ -46,162 +37,158 @@ public class DocumentService {
     private final TransferDocumentMapper transferDocumentMapper;
     private final EnglishCertificateRepository englishCertificateRepository;
     private final MockDocumentParserService mockDocumentParserService;
+    private final ProtectedFileStorageService storageService;
 
-    private final String uploadDir = "uploads/";
+    private static final Set<String> ALLOWED_TYPES =
+            Set.of("application/pdf", "image/jpeg");
 
-    private static final List<String> ALLOWED_TYPES =
-            List.of("application/pdf", "image/jpeg");
     @Transactional
     public TransferDocumentResponseDto uploadDocument(Long appId,
                                                       DocumentType documentType,
                                                       MultipartFile file) {
 
-        if (file == null || file.isEmpty())
-            throw new BusinessException("DOC-400", "No file selected.");
-
-        if (file.getSize() > 10 * 1024 * 1024)
-            throw new BusinessException("DOC-413", "File size exceeds 10 MB limit.");
-
-        if (!ALLOWED_TYPES.contains(file.getContentType()))
-            throw new BusinessException("DOC-400", "Only PDF or JPEG files are allowed.");
+        validateFile(file);
 
         Application application = applicationRepository.findById(appId)
                 .orElseThrow(() -> new BusinessException("APP-404", "Application not found."));
 
-        try {
-            Path root = Paths.get(uploadDir);
-            Files.createDirectories(root);
+        documentRepository.deleteByApplication_AppIdAndDocumentType(appId, documentType);
+        if (documentType == DocumentType.ENGLISH_CERTIFICATE)
+            englishCertificateRepository.deleteByApplication_AppId(appId);
 
-            documentRepository.deleteByApplication_AppIdAndDocumentType(appId, documentType);
+        if (!scanForVirus(file))
+            throw new BusinessException("DOC-406", "Malicious file detected.");
 
-            if (documentType == DocumentType.ENGLISH_CERTIFICATE) {
-                englishCertificateRepository.deleteByApplication_AppId(appId);
-            }
+        // 🔐 ENCRYPTED STORAGE
+        ProtectedFileStorageService.StoredEncryptedFile stored =
+                storageService.storeEncrypted(file, appId, documentType);
 
-            String ext = Objects.requireNonNull(file.getOriginalFilename())
-                    .substring(file.getOriginalFilename().lastIndexOf("."));
+        TransferDocument doc = new TransferDocument();
+        doc.setApplication(application);
+        doc.setDocumentType(documentType);
+        doc.setFileName("DOCUMENT_" + documentType.name());
+        doc.setFilePath(stored.storedName());       // .enc file
+        doc.setContentType(stored.contentType());
+        doc.setSizeBytes(stored.originalSize());
+        doc.setEncryptionIv(stored.ivBase64());
+        doc.setEncryptionAlg(stored.alg());
 
-            String hashedName = DigestUtils.sha256Hex(
-                    file.getOriginalFilename() + System.currentTimeMillis()
-            ) + ext;
+        TransferDocument saved = documentRepository.save(doc);
 
-            Path targetPath = root.resolve(hashedName);
+        if (documentType == DocumentType.ENGLISH_CERTIFICATE) {
 
-            if (!scanForVirus(file))
-                throw new BusinessException("DOC-406", "Uploaded file contains malicious content.");
+            EnglishCertificate cert = new EnglishCertificate();
+            cert.setApplication(application);
+            cert.setFilePath(stored.storedName());
+            cert.setFileName("DOCUMENT_ENGLISH_CERTIFICATE");
 
-            file.transferTo(targetPath.toFile());
+            MockEnglishCertData parsed =
+                    mockDocumentParserService.parseEnglishCertificate(cert);
 
-            TransferDocument doc = new TransferDocument();
-            doc.setApplication(application);
-            doc.setDocumentType(documentType);
-            doc.setFileName(file.getOriginalFilename());
-            doc.setFilePath(hashedName);
+            cert.setType(parsed.getType());
+            cert.setScore(parsed.getScore());
+            cert.setDocumentNo(parsed.getDocumentNo());
 
-            TransferDocument savedDoc = documentRepository.save(doc);
-
-            if (documentType == DocumentType.ENGLISH_CERTIFICATE) {
-
-                EnglishCertificate cert = new EnglishCertificate();
-                cert.setApplication(application);
-                cert.setFilePath(hashedName);
-                cert.setFileName(file.getOriginalFilename());
-
-                MockEnglishCertData parsedEnglishCertificate = mockDocumentParserService.parseEnglishCertificate(cert);
-
-                cert.setType(parsedEnglishCertificate.getType());
-                cert.setScore(parsedEnglishCertificate.getScore());
-                cert.setDocumentNo(parsedEnglishCertificate.getDocumentNo());
-
-                englishCertificateRepository.save(cert);
-            }
-
-            return transferDocumentMapper.map(documentRepository.save(savedDoc));
-
-        } catch (IOException ex) {
-
-            throw new BusinessException("SYS-500", "System error occurred while uploading file.");
+            englishCertificateRepository.save(cert);
         }
+
+        return transferDocumentMapper.map(saved);
     }
 
 
+    private void validateFile(MultipartFile file) {
+        if (file == null || file.isEmpty())
+            throw new BusinessException("DOC-400", "No file selected.");
+
+        if (file.getSize() > 10 * 1024 * 1024)
+            throw new BusinessException("DOC-413", "File size exceeds 10MB.");
+
+        if (!ALLOWED_TYPES.contains(file.getContentType()))
+            throw new BusinessException("DOC-415", "Only PDF or JPEG files allowed.");
+    }
+
+    private String resolveExtension(MultipartFile file) {
+        return switch (file.getContentType()) {
+            case "application/pdf" -> ".pdf";
+            case "image/jpeg" -> ".jpg";
+            default -> throw new BusinessException("DOC-415", "Invalid type");
+        };
+    }
+
     private boolean scanForVirus(MultipartFile file) {
-        return true; // stub
+        return file.getSize() < 10 * 1024 * 1024;
     }
 
     public void validateMandatoryDocuments(Application app) {
 
-        if (app.getStudent().getStudentType() != StudentType.EXTERNAL) return;
+        List<DocumentType> mandatory = List.of(
+                DocumentType.TRANSCRIPT,
+                DocumentType.YKS_RESULT,
+                DocumentType.ENGLISH_CERTIFICATE
+        );
 
         List<TransferDocument> docs =
                 documentRepository.findByApplication_AppId(app.getAppId());
 
-        Set<DocumentType> uploadedTypes = docs.stream()
+        Set<DocumentType> uploaded = docs.stream()
                 .map(TransferDocument::getDocumentType)
                 .collect(Collectors.toSet());
 
-        // ✅ External submit için zorunlu minimum set
-        List<DocumentType> mandatory = List.of(
-                DocumentType.TRANSCRIPT,
-                DocumentType.YKS_RESULT
-        );
-
         for (DocumentType type : mandatory) {
-            if (!uploadedTypes.contains(type)) {
-                throw new BusinessException(
-                        "DOC-402",
-                        "Dış üniversite öğrencileri için zorunlu belge eksik: " + type
-                );
-            }
+            if (!uploaded.contains(type))
+                throw new BusinessException("DOC-422",
+                        "Missing mandatory document: " + type);
         }
 
-        // ✅ Zorunlu belgelerin doğrulanması (MOCK)
         for (TransferDocument doc : docs) {
+            if (mandatory.contains(doc.getDocumentType()) &&
+                !documentVerificationService.verify(doc.getDocumentType(), doc)) {
 
-            // İstersen sadece zorunluları verify et:
-            if (!mandatory.contains(doc.getDocumentType())) continue;
-
-            boolean valid = documentVerificationService.verify(doc.getDocumentType(), doc);
-
-            if (!valid) {
-                throw new BusinessException(
-                        "DOC-403",
-                        "Belge doğrulanamadı: " + doc.getFileName()
-                );
+                throw new BusinessException("DOC-403",
+                        "Document verification failed: " + doc.getDocumentType());
             }
         }
     }
 
-    public ResponseEntity<Resource> download(Long docId) {
+    public ResponseEntity<byte[]> download(Long docId) {
 
         TransferDocument doc = documentRepository.findById(docId)
+                .orElseThrow(() -> new BusinessException("DOC-404", "Document not found"));
+
+        Long userId = SecurityUtil.getCurrentUserId();
+        if (!doc.getApplication().getStudent().getUser().getUserId().equals(userId))
+            throw new BusinessException("SEC-403", "Access denied");
+
+        byte[] plain = storageService.readAndDecrypt(doc.getFilePath(), doc.getEncryptionIv());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + doc.getFileName() + "\"")
+                .contentType(MediaType.parseMediaType(doc.getContentType()))
+                .body(plain);
+    }
+
+
+    public ResponseEntity<byte[]> downloadByAppAndType(Long appId, DocumentType type) {
+
+        TransferDocument doc = getTransferDocument(appId, type)
                 .orElseThrow(() -> new BusinessException("DOC-404","Document not found"));
 
-        Path filePath = Paths.get(uploadDir).resolve(doc.getFilePath());
+        Long userId = SecurityUtil.getCurrentUserId();
+        if (!doc.getApplication().getStudent().getUser().getUserId().equals(userId))
+            throw new BusinessException("SEC-403","Access denied");
 
-        try {
-            Resource resource = new UrlResource(filePath.toUri());
+        byte[] plain = storageService.readAndDecrypt(doc.getFilePath(), doc.getEncryptionIv());
 
-            if (!resource.exists() || !resource.isReadable())
-                throw new BusinessException("DOC-404","File not found on server");
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + doc.getFileName() + "\"")
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(resource);
-
-        } catch (MalformedURLException ex) {
-
-            throw new BusinessException("SYS-500","File download failed.");
-        }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + doc.getFileName() + "\"")
+                .contentType(MediaType.parseMediaType(doc.getContentType()))
+                .body(plain);
     }
 
-    public Optional<TransferDocument> findDocument(Long appId, DocumentType documentType) {
-
-        return documentRepository
-                .findByApplication_AppIdAndDocumentType(appId, documentType);
+    public Optional<TransferDocument> getTransferDocument(Long appId, DocumentType documentType) {
+        return documentRepository.findByApplication_AppIdAndDocumentType(appId, documentType);
     }
-
 
 }

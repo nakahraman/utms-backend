@@ -6,9 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
 @Table(name = "departments")
 @Data
@@ -41,8 +38,5 @@ public class Department {
 
     @Column(name = "waitlist_quota")
     private Integer waitlistQuota;
-
-    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<DepartmentAllowedSemester> allowedSemesters = new ArrayList<>();
 
 }

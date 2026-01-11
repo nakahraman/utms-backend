@@ -6,15 +6,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
-
 public interface TransferDocumentRepository extends JpaRepository<TransferDocument, Long> {
+
+    void deleteByApplication_AppIdAndDocumentType(Long appId, DocumentType type);
+
     List<TransferDocument> findByApplication_AppId(Long appId);
 
-    void deleteByApplication_AppIdAndDocumentType(Long appId, DocumentType documentType);
-
-    Optional<TransferDocument> findByApplication_AppIdAndDocumentType(
-            Long appId,
-            DocumentType documentType
-    );
+    Optional<TransferDocument> findByApplication_AppIdAndDocumentType(Long appId, DocumentType type);
 
 }

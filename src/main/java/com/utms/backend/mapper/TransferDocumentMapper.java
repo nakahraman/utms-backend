@@ -8,11 +8,13 @@ import org.springframework.stereotype.Component;
 public class TransferDocumentMapper {
 
     public TransferDocumentResponseDto map(TransferDocument d) {
+
         return new TransferDocumentResponseDto(
-                d.getDocumentId(),
-                d.getApplication() != null ? d.getApplication().getAppId() : null,
+                d.getId(),
                 d.getDocumentType(),
-                d.getFileName()
+                d.getFileName(),
+                d.getSizeBytes(),
+                d.getUploadedAt()
         );
     }
 }
