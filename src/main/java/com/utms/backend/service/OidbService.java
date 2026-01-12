@@ -87,4 +87,5 @@ public class OidbService {
 
         return applicationService.getFinalizedResults(published);
     }
+
 }

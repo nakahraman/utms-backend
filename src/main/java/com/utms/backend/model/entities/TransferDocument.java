@@ -13,7 +13,8 @@ public class TransferDocument {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "doc_id")
+    private Long docId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "app_id")

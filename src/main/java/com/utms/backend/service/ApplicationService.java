@@ -199,7 +199,19 @@ public class ApplicationService {
                     "Only applications approved by YDYO can be validated by OIDB");
         }
 
-        documentService.validateMandatoryDocuments(app);
+        try {
+            documentService.validateMandatoryDocuments(app);
+        } catch (BusinessException ex) {
+
+            transitionService.transition(
+                    app,
+                    ApplicationStatus.OIDB_FLAGGED,
+                    ex.getMessage()
+            );
+
+            throw new BusinessException("OIDB-VAL-001",
+                    "Application flagged due to missing or invalid documents");
+        }
 
         Application updated = transitionService.transition(
                 app,
@@ -391,24 +403,24 @@ public class ApplicationService {
         );
 
         return applicationRepository
-                .findFinalResultsFiltered(terminalStatuses, published)
+                .findFinalizedResultsForView(terminalStatuses, published)
                 .stream()
                 .map(applicationMapper::map)
                 .toList();
     }
 
-    public List<Application> findFinalResults() {
+    public List<Application> findPublishableResults() {
 
-        List<ApplicationStatus> terminalStatuses = List.of(
+        List<ApplicationStatus> publishable = List.of(
                 ApplicationStatus.YGK_APPROVED,
-                ApplicationStatus.YGK_REJECTED,
                 ApplicationStatus.YGK_WAITLISTED,
+                ApplicationStatus.YGK_REJECTED,
                 ApplicationStatus.ACADEMICALLY_INELIGIBLE
         );
 
-        return applicationRepository
-                .findFinalResults(terminalStatuses);
+        return applicationRepository.findByStatusInAndPublishedFalse(publishable);
     }
+
 
     public ApplicationResponseDto getLatestMyApplication() {
 

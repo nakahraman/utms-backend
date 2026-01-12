@@ -40,12 +40,20 @@ public class ApplicationStatusTransitionService {
                             Set.of(ApplicationStatus.YDYO_APPROVED,
                                     ApplicationStatus.YDYO_EXAM_REQUIRED)),
 
+                    Map.entry(ApplicationStatus.OIDB_FLAGGED,
+                            Set.of(ApplicationStatus.OIDB_RETURNED,
+                                    ApplicationStatus.OIDB_VALIDATED)),
+
+                    Map.entry(ApplicationStatus.OIDB_RETURNED,
+                            Set.of(ApplicationStatus.SUBMITTED)),
+
                     // --- YDYO ---
                     Map.entry(ApplicationStatus.YDYO_EXAM_REQUIRED,
                             Set.of(ApplicationStatus.YDYO_APPROVED)),
 
                     Map.entry(ApplicationStatus.YDYO_APPROVED,
-                            Set.of(ApplicationStatus.OIDB_VALIDATED)),
+                            Set.of(ApplicationStatus.OIDB_VALIDATED,
+                                    ApplicationStatus.OIDB_FLAGGED)),
 
                     // --- FACULTY ---
                     Map.entry(ApplicationStatus.OIDB_VALIDATED,

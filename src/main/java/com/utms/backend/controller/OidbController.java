@@ -22,8 +22,6 @@ public class OidbController {
 
     private final OidbService oidbService;
     private final ResultPublishService resultPublishService;
-    private ApplicationService applicationService;
-
 
     @PreAuthorize("hasRole('OIDB')")
     @GetMapping("/inbox")

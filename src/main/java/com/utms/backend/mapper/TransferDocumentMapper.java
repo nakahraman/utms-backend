@@ -10,7 +10,7 @@ public class TransferDocumentMapper {
     public TransferDocumentResponseDto map(TransferDocument d) {
 
         return new TransferDocumentResponseDto(
-                d.getId(),
+                d.getDocId(),
                 d.getDocumentType(),
                 d.getFileName(),
                 d.getSizeBytes(),

@@ -50,16 +50,21 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
             """)
     List<Application> findFinalResults(@Param("statuses") List<ApplicationStatus> statuses);
 
-    @Query("""
-            select a from Application a
-            join fetch a.student
-            join fetch a.department
-            where a.status in :statuses
-            and (:published is null or a.published = :published)
-            """)
-    List<Application> findFinalResultsFiltered(@Param("statuses") List<ApplicationStatus> statuses,
-                                       @Param("published") Boolean published);
+    List<Application> findByStatusInAndPublishedFalse(List<ApplicationStatus> statuses);
 
+
+    @Query("""
+                select a from Application a
+                join fetch a.student
+                join fetch a.department
+                where a.status in :statuses
+                  and (:published is null or a.published = :published)
+                order by a.createdDate desc
+            """)
+    List<Application> findFinalizedResultsForView(
+            @Param("statuses") List<ApplicationStatus> statuses,
+            @Param("published") Boolean published
+    );
 
     @Query("""
                 select a
