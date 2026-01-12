@@ -31,17 +31,38 @@ public class EvaluationRankingService {
 
         Department dept = departmentService.findDepartmentById(deptId);
 
-        int quota = dept.getQuota();
-        int waitlistQuota = dept.getWaitlistQuota();
-
         List<Evaluation> evals =
                 evaluationRepository.findByDepartmentOrderedByScoreDesc(deptId);
+
+        if (evals.isEmpty())
+            throw new BusinessException("YGK-404",
+                    "No applications found for this department.");
+
+        // 🔒 DAHA ÖNCE FİNALİZE EDİLMİŞ Mİ?
+        boolean alreadyFinalized =
+                evals.stream().anyMatch(e ->
+                        e.getApplication().getStatus() != ApplicationStatus.SENT_TO_YGK);
+
+        if (alreadyFinalized)
+            throw new BusinessException("YGK-401",
+                    "This department has already been finalized.");
+
+        validateQuota(evals, dept);
+
+        int quota = dept.getQuota();
+        int waitlistQuota = dept.getWaitlistQuota();
 
         Long currentYgkMemberId = SecurityUtil.getCurrentUserId();
 
         int rank = 1;
 
         for (Evaluation ev : evals) {
+
+            // SKOR YOKSA FİNALİZE EDİLEMEZ
+            if (ev.getScore() == null)
+                throw new BusinessException("YGK-402",
+                        "Application has no evaluation score.");
+
 
             Application app = ev.getApplication();
 
@@ -109,4 +130,12 @@ public class EvaluationRankingService {
         // 🔒 Tek seferde flush – transaction sonunda Hibernate dirty-checking çalışır
         evaluationRepository.saveAll(evals);
     }
+
+    private void validateQuota(List<Evaluation> evals, Department dept) {
+
+        if (evals.size() > dept.getQuota() + dept.getWaitlistQuota()) {
+            return; // normal – reddedilecekler olacaktır
+        }
+    }
+
 }
