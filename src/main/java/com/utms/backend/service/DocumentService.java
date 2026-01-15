@@ -123,8 +123,8 @@ public class DocumentService {
 
         List<DocumentType> mandatory = List.of(
                 DocumentType.TRANSCRIPT,
-                DocumentType.YKS_RESULT,
-                DocumentType.ENGLISH_CERTIFICATE
+                DocumentType.YKS_RESULT
+            //    DocumentType.ENGLISH_CERTIFICATE
         );
 
         List<TransferDocument> docs =

@@ -14,7 +14,6 @@ public class ApplicationMapper {
         Boolean requiresPortfolio = false;
 
         if (a.getDepartment() != null) {
-            departmentName = a.getDepartment().getDeptName();
             requiresPortfolio = Boolean.TRUE.equals(a.getDepartment().getCriteria().isRequiresPortfolio());
 
             if (a.getDepartment().getFaculty() != null) {
@@ -24,6 +23,7 @@ public class ApplicationMapper {
 
         return new ApplicationResponseDto(
                 a.getAppId(),
+                a.getDepartment().getDeptId(),
                 departmentName,
                 facultyName,
                 a.getGpa(),
@@ -32,7 +32,9 @@ public class ApplicationMapper {
                 a.getSubmissionDate(),
                 a.getDecision(),
                 requiresPortfolio,
-                a.getStudent().getStudentType()
+                a.getStudent().getStudentType(),
+                a.getStudent().getUser().getName(),
+                a.getStudent().getStudentId()
         );
     }
 }

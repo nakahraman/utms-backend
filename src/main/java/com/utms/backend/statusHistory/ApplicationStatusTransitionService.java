@@ -32,22 +32,15 @@ public class ApplicationStatusTransitionService {
                     Map.entry(ApplicationStatus.DRAFT,
                             Set.of(ApplicationStatus.SUBMITTED)),
 
-                    // --- OIDB VALIDATION ---
+                    // --- OIDB → YDYO ---
                     Map.entry(ApplicationStatus.SUBMITTED,
                             Set.of(ApplicationStatus.SENT_TO_YDYO)),
-                    
-                    Map.entry(ApplicationStatus.SENT_TO_YDYO,
-                            Set.of(ApplicationStatus.YDYO_APPROVED,
-                                    ApplicationStatus.YDYO_EXAM_REQUIRED)),
-
-                    Map.entry(ApplicationStatus.OIDB_FLAGGED,
-                            Set.of(ApplicationStatus.OIDB_RETURNED,
-                                    ApplicationStatus.OIDB_VALIDATED)),
-
-                    Map.entry(ApplicationStatus.OIDB_RETURNED,
-                            Set.of(ApplicationStatus.SUBMITTED)),
 
                     // --- YDYO ---
+                    Map.entry(ApplicationStatus.SENT_TO_YDYO,
+                            Set.of(ApplicationStatus.OIDB_VALIDATED,
+                                    ApplicationStatus.YDYO_EXAM_REQUIRED)),
+
                     Map.entry(ApplicationStatus.YDYO_EXAM_REQUIRED,
                             Set.of(ApplicationStatus.YDYO_APPROVED)),
 
@@ -55,19 +48,25 @@ public class ApplicationStatusTransitionService {
                             Set.of(ApplicationStatus.OIDB_VALIDATED,
                                     ApplicationStatus.OIDB_FLAGGED)),
 
+
+                    // --- OIDB ---
+                    Map.entry(ApplicationStatus.OIDB_FLAGGED,
+                            Set.of(ApplicationStatus.OIDB_RETURNED,
+                                    ApplicationStatus.OIDB_VALIDATED)),
+
+                    Map.entry(ApplicationStatus.OIDB_RETURNED,
+                            Set.of(ApplicationStatus.SUBMITTED)),
+
                     // --- FACULTY ---
                     Map.entry(ApplicationStatus.OIDB_VALIDATED,
                             Set.of(ApplicationStatus.FACULTY_EVALUATED,
                                     ApplicationStatus.FACULTY_RETURNED)),
 
+                    Map.entry(ApplicationStatus.FACULTY_RETURNED,
+                            Set.of(ApplicationStatus.OIDB_VALIDATED)),
 
                     Map.entry(ApplicationStatus.FACULTY_EVALUATED,
                             Set.of(ApplicationStatus.SENT_TO_YGK)),
-
-
-                    // --- RETURN FLOW ---
-                    Map.entry(ApplicationStatus.FACULTY_RETURNED,
-                            Set.of(ApplicationStatus.OIDB_VALIDATED)),
 
 
                     // --- YGK ---
@@ -87,12 +86,9 @@ public class ApplicationStatusTransitionService {
                     Map.entry(ApplicationStatus.ACADEMICALLY_INELIGIBLE,
                             Set.of(ApplicationStatus.RESULT_PUBLISHED)),
 
-
                     // --- TERMINAL ---
                     Map.entry(ApplicationStatus.RESULT_PUBLISHED, Set.of())
-
             );
-
 
     @Transactional
     public Application transition(Application app, ApplicationStatus toStatus, String reason) {

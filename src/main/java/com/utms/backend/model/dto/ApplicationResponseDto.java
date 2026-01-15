@@ -1,9 +1,6 @@
 package com.utms.backend.model.dto;
 
-import com.utms.backend.model.enums.ApplicationStatus;
-import com.utms.backend.model.enums.Decision;
-import com.utms.backend.model.enums.StudentType;
-import com.utms.backend.model.enums.ValidationStatus;
+import com.utms.backend.model.enums.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -15,6 +12,7 @@ import java.time.LocalDateTime;
 public class ApplicationResponseDto {
 
     private Long appId;
+    private Long departmentId;
     private String departmentName;
     private String facultyName;
     private Double gpa;
@@ -24,5 +22,6 @@ public class ApplicationResponseDto {
     private Decision decision;   // ← BU OLMADAN GÖRÜNMEZ
     private Boolean requiresPortfolio;
     private StudentType studentType;
-
+    private String studentName;
+    private Long studentId;
 }

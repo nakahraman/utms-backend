@@ -209,18 +209,21 @@ public class ApplicationService {
                     "Only applications approved by YDYO can be validated by OIDB");
         }
 
-        try {
-            documentService.validateMandatoryDocuments(app);
-        } catch (BusinessException ex) {
+        // 🔴 SADECE EXTERNAL öğrenciler için belge kontrolü
+        if (app.getStudent().getStudentType() == StudentType.EXTERNAL) {
+            try {
+                documentService.validateMandatoryDocuments(app);
+            } catch (BusinessException ex) {
 
-            transitionService.transition(
-                    app,
-                    ApplicationStatus.OIDB_FLAGGED,
-                    ex.getMessage()
-            );
+                transitionService.transition(
+                        app,
+                        ApplicationStatus.OIDB_FLAGGED,
+                        ex.getMessage()
+                );
 
-            throw new BusinessException("OIDB-VAL-001",
-                    "Application flagged due to missing or invalid documents");
+                throw new BusinessException("OIDB-VAL-001",
+                        "Application flagged due to missing or invalid documents");
+            }
         }
 
         Application updated = transitionService.transition(
@@ -404,20 +407,23 @@ public class ApplicationService {
     }
 
 
-    public List<ApplicationResponseDto> getFinalizedResults(Boolean published) {
+    public List<ApplicationResponseDto> getFinalizedResults(Long deptId, Boolean published) {
 
-        List<ApplicationStatus> terminalStatuses = List.of(
+        List<ApplicationStatus> statuses = List.of(
                 ApplicationStatus.YGK_APPROVED,
+                ApplicationStatus.YGK_WAITLISTED,
                 ApplicationStatus.YGK_REJECTED,
-                ApplicationStatus.YGK_WAITLISTED
+                ApplicationStatus.ACADEMICALLY_INELIGIBLE,
+                ApplicationStatus.RESULT_PUBLISHED
         );
 
         return applicationRepository
-                .findFinalizedResultsForView(terminalStatuses, published)
+                .findFinalizedResultsForView(deptId, statuses, published)
                 .stream()
                 .map(applicationMapper::map)
                 .toList();
     }
+
 
     public List<Application> findPublishableResults() {
 

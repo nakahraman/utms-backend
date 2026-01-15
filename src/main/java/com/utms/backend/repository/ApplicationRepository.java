@@ -54,17 +54,20 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
 
     @Query("""
-                select a from Application a
-                join fetch a.student
-                join fetch a.department
-                where a.status in :statuses
-                  and (:published is null or a.published = :published)
-                order by a.createdDate desc
-            """)
+    select a from Application a
+    join fetch a.student
+    join fetch a.department d
+    where a.status in :statuses
+      and d.deptId = :deptId
+      and (:published is null or a.published = :published)
+    order by a.createdDate desc
+""")
     List<Application> findFinalizedResultsForView(
+            @Param("deptId") Long deptId,
             @Param("statuses") List<ApplicationStatus> statuses,
             @Param("published") Boolean published
     );
+
 
     @Query("""
                 select a

@@ -32,10 +32,16 @@ public class OidbController {
         return oidbService.getInbox(statuses);
     }
     @PreAuthorize("hasRole('OIDB')")
-    @PostMapping("/send-to-faculty")
+    @PostMapping("/oidb_evaluate")
     @Operation(summary = "Validate application", description = "Oidb validates application")
     public ApplicationResponseDto validate(@RequestParam Long appId) {
         return oidbService.oidbValidateApplication(appId);
+    }
+
+    @PreAuthorize("hasRole('OIDB')")
+    @PostMapping("/forward-to-faculty")
+    public ApplicationResponseDto forwardToFaculty(@RequestParam Long appId) {
+        return oidbService.forwardToFaculty(appId);
     }
 
     @PreAuthorize("hasRole('OIDB')")
@@ -70,8 +76,9 @@ public class OidbController {
     @GetMapping("/results")
     @Operation(summary = "View finalized and/or published application results")
     public List<ApplicationResponseDto> getFinalizedResults(
+            @RequestParam(required = false) Long deptId,
             @RequestParam(required = false) Boolean published) {
-        return oidbService.getFinalizedResults(published);
+        return oidbService.getFinalizedResults(deptId, published);
     }
 
 }

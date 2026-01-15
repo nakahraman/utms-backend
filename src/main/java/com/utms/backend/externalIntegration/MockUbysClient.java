@@ -27,8 +27,14 @@ public class MockUbysClient implements ExternalUbysClient {
     @Override
     public boolean authenticate(String username, String password) {
 
-        // Gerçek UBYS yerine basit mock kuralı
-        return username.startsWith("std") && password.equals("123456");
+        if (!"123456".equals(password)) return false;
+
+        return username.startsWith("std")
+               || username.startsWith("oidb")
+               || username.startsWith("ydyo")
+               || username.startsWith("fac")
+               || username.startsWith("ygk");
     }
+
 }
 

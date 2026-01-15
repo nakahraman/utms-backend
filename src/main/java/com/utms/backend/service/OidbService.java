@@ -83,9 +83,28 @@ public class OidbService {
     }
 
 
-    public List<ApplicationResponseDto> getFinalizedResults(Boolean published) {
+    public List<ApplicationResponseDto> getFinalizedResults(Long deptId, Boolean published) {
 
-        return applicationService.getFinalizedResults(published);
+        return applicationService.getFinalizedResults(deptId, published);
+    }
+
+    @Transactional
+    public ApplicationResponseDto forwardToFaculty(Long appId) {
+
+        Application app = applicationService.findApplicationById(appId);
+
+        if (app.getStatus() != ApplicationStatus.OIDB_VALIDATED) {
+            throw new BusinessException("OIDB-404",
+                    "Only OIDB validated applications can be sent to faculty");
+        }
+
+        Application updated = transitionService.transition(
+                app,
+                ApplicationStatus.FACULTY_EVALUATED,
+                "OIDB forwarded application to Faculty"
+        );
+
+        return applicationMapper.map(updated);
     }
 
 }
