@@ -10,10 +10,16 @@ public class ApplicationMapper {
     public ApplicationResponseDto map(Application a) {
 
         String departmentName = a.getDepartment() != null ? a.getDepartment().getDeptName() : null;
-
         String facultyName = null;
-        if (a.getDepartment() != null && a.getDepartment().getFaculty() != null) {
-            facultyName = a.getDepartment().getFaculty().getFacultyName();
+        Boolean requiresPortfolio = false;
+
+        if (a.getDepartment() != null) {
+            departmentName = a.getDepartment().getDeptName();
+            requiresPortfolio = Boolean.TRUE.equals(a.getDepartment().getCriteria().isRequiresPortfolio());
+
+            if (a.getDepartment().getFaculty() != null) {
+                facultyName = a.getDepartment().getFaculty().getFacultyName();
+            }
         }
 
         return new ApplicationResponseDto(
@@ -24,7 +30,9 @@ public class ApplicationMapper {
                 a.getStatus(),
                 a.getValidationStatus(),
                 a.getSubmissionDate(),
-                a.getDecision()
+                a.getDecision(),
+                requiresPortfolio,
+                a.getStudent().getStudentType()
         );
     }
 }

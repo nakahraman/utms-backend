@@ -42,6 +42,9 @@ public class Application {
     @JoinColumn(name = "dept_id")
     private Department department;
 
+    @Column(name = "target_semester", nullable = false)
+    private Integer targetSemester;
+
     private Double gpa;
     private LocalDateTime submissionDate;
 

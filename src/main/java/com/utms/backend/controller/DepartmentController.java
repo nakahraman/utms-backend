@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/departments")
+@RequestMapping("api/departments")
 @AllArgsConstructor
 @Tag(name = "Departments", description = "Department listing APIs")
 public class DepartmentController {

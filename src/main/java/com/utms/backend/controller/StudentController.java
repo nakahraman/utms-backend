@@ -1,11 +1,11 @@
 package com.utms.backend.controller;
 
 import com.utms.backend.model.dto.ApplicationResponseDto;
-import com.utms.backend.model.record.ApplicationSubmitRequest;
+import com.utms.backend.model.dto.ApplicationStatusHistoryDto;
+import com.utms.backend.model.dto.StudentProfileDto;
 import com.utms.backend.security.SecurityUtil;
 import com.utms.backend.service.ApplicationService;
 import com.utms.backend.statusHistory.ApplicationStatusHistory;
-import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
@@ -15,13 +15,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/student")
+@RequestMapping("api/student")
 @Tag(name = "Student", description = "Student APIs")
 @AllArgsConstructor
 public class StudentController {
 
     private final ApplicationService applicationService;
-    private final ApplicationStatusTransitionService transitionService;
 
     @PostMapping("/draft")
     @PreAuthorize("hasRole('STUDENT')")
@@ -68,9 +67,26 @@ public class StudentController {
         return applicationService.getMyResult();
     }
 
+
+    @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/me")
+    public StudentProfileDto getMyProfile() {
+
+        Long studentId = SecurityUtil.getCurrentStudentId();
+        return applicationService.getMyStudentProfile(studentId);
+    }
+
+    @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/me/{id}")
+    public ApplicationResponseDto getMyApplication(@PathVariable Long id) {
+
+        Long studentId = SecurityUtil.getCurrentStudentId();
+        return applicationService.getMyApplicationById(studentId, id);
+    }
+
     @PreAuthorize("hasRole('STUDENT')")
     @GetMapping("/me/applications/{appId}/history")
-    public List<ApplicationStatusHistory> getMyApplicationHistory(@PathVariable Long appId) {
+    public List<ApplicationStatusHistoryDto> getMyApplicationHistory(@PathVariable Long appId) {
         return applicationService.getMyApplicationHistory(appId);
     }
 

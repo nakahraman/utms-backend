@@ -3,14 +3,12 @@ package com.utms.backend.model.entities;
 import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.model.enums.UserSource;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "students")
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/ygk")
+@RequestMapping("api/ygk")
 @Tag(name = "YGK", description = "Higher Education Committee APIs")
 @AllArgsConstructor
 public class YgkController {

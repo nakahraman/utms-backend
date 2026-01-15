@@ -2,6 +2,7 @@ package com.utms.backend.service;
 
 import com.utms.backend.exception.BusinessException;
 import com.utms.backend.externalIntegration.ExternalUbysClient;
+import com.utms.backend.model.dto.LoginResponse;
 import com.utms.backend.model.entities.PasswordResetToken;
 import com.utms.backend.model.entities.User;
 import com.utms.backend.model.enums.Role;
@@ -30,7 +31,7 @@ public class AuthService {
     private final PasswordResetTokenRepository tokenRepository;
     private final EmailService emailService;
 
-    public String login(String username, String password) {
+    public LoginResponse login(String username, String password) {
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new BusinessException("AUTH-404", "Kullanıcı bulunamadı"));
@@ -70,7 +71,9 @@ public class AuthService {
                     ));
         }
 
-        return jwtService.generateToken(user);
+        String token = jwtService.generateToken(user);
+
+        return new LoginResponse(token, user.getRole());
     }
 
     private void validateAccountStatus(User user) {

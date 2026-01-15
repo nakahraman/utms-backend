@@ -6,6 +6,7 @@ import com.utms.backend.model.entities.User;
 import com.utms.backend.model.enums.StudentType;
 import com.utms.backend.model.enums.UserSource;
 import com.utms.backend.repository.StudentRepository;
+import com.utms.backend.security.SecurityUtil;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,8 +52,13 @@ public class StudentService {
         return studentRepository.findByUserUserId(userId);
     }
 
+
     public void save(Student student) {
         studentRepository.save(student);
     }
 
+    public Student findStudentIdByStudentId(Long studentId) {
+        return studentRepository.findById(studentId)
+                .orElseThrow(() -> new BusinessException("STU-404", "Student not found"));
+    }
 }

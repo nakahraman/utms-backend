@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/ygk")
+@RequestMapping("api/ygk")
 @Tag(name = "YGK", description = "Department evaluation APIs")
 @AllArgsConstructor
 public class EvaluationController {

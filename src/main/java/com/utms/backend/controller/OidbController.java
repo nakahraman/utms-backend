@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/oidb")
+@RequestMapping("api/oidb")
 @Tag(name = "Oidb", description = "Oidb office APIs")
 @AllArgsConstructor
 public class OidbController {

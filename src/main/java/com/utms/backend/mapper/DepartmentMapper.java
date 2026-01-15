@@ -17,7 +17,8 @@ public class DepartmentMapper {
                 d.getDeptName(),
                 d.getCriteria().toString(),
                 f != null ? f.getFacultyId() : null,
-                f != null ? f.getFacultyName() : null
+                f != null ? f.getFacultyName() : null,
+                d.getCriteria().isRequiresPortfolio()
         );
     }
 }

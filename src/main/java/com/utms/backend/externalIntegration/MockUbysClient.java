@@ -13,12 +13,22 @@ public class MockUbysClient implements ExternalUbysClient {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /*
     @Override
     public boolean authenticate(String username, String password) {
 
         return userRepository.findByUsernameAndUserSource(username, UserSource.UBYS)
                 .filter(user -> passwordEncoder.matches(password, user.getPasswordHash()))
                 .isPresent();
+    }
+
+     */
+
+    @Override
+    public boolean authenticate(String username, String password) {
+
+        // Gerçek UBYS yerine basit mock kuralı
+        return username.startsWith("std") && password.equals("123456");
     }
 }
 

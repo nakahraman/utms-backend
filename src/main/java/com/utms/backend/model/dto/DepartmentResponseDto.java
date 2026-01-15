@@ -12,4 +12,5 @@ public class DepartmentResponseDto {
     private String criteria;
     private Long facultyId;
     private String facultyName;
+    private boolean requiresPortfolio;
 }

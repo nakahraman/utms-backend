@@ -3,12 +3,17 @@ package com.utms.backend.service;
 import com.utms.backend.eligibility.externalStudent.ExternalEligibilityExtractor;
 import com.utms.backend.exception.BusinessException;
 import com.utms.backend.mapper.ApplicationMapper;
+import com.utms.backend.mapper.ApplicationStatusHistoryMapper;
+import com.utms.backend.mapper.StudentMapper;
 import com.utms.backend.model.dto.ApplicationResponseDto;
+import com.utms.backend.model.dto.ApplicationStatusHistoryDto;
+import com.utms.backend.model.dto.StudentProfileDto;
 import com.utms.backend.model.entities.*;
 import com.utms.backend.model.enums.*;
 import com.utms.backend.repository.ApplicationRepository;
 import com.utms.backend.security.SecurityUtil;
 import com.utms.backend.statusHistory.ApplicationStatusHistory;
+import com.utms.backend.statusHistory.ApplicationStatusHistoryRepository;
 import com.utms.backend.statusHistory.ApplicationStatusTransitionService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,25 +37,33 @@ public class ApplicationService {
     private final EnglishCertificateService englishCertificateService;
     private final EvaluationService evaluationService;
     private final StudentService studentService;
-    private final List<ApplicationStatus> ALLOWED_FOR_NEW_APPLICATION = List.of(ApplicationStatus.DRAFT);
+    private final StudentMapper studentMapper;
+    private final ApplicationStatusHistoryRepository historyRepository;
+    private final ApplicationStatusHistoryMapper historyMapper;
+
 
 
     // ---------- DRAFT ----------
     @Transactional
-    public Long createDraft(Long userId, Long departmentId) {
+    public Long createDraft(Long userId, Long deptId) {
 
         Student student = studentService.resolveStudent(userId);
-        Department dept = departmentService.findDepartmentById(departmentId);
+        Department dept = departmentService.findDepartmentById(deptId);
 
-        Application app = new Application();
-        app.setStudent(student);
-        app.setDepartment(dept);
-        app.setSubmissionDate(LocalDateTime.now());
-        app.setStatus(ApplicationStatus.DRAFT);
+        checkCanSubmit(student.getStudentId(), dept.getDeptId());
+
+        Application app = Application.builder()
+                .student(student)
+                .department(dept)
+                .status(ApplicationStatus.DRAFT)
+                .createdDate(LocalDateTime.now())
+                .validationStatus(ValidationStatus.FLAGGED)
+                .status(ApplicationStatus.DRAFT)
+                .published(false)
+                .build();
 
         return applicationRepository.save(app).getAppId();
     }
-
 
     // ---------- EXTERNAL SUBMIT ----------
 
@@ -58,8 +71,6 @@ public class ApplicationService {
     public ApplicationResponseDto submitExternalApplication(Long appId) {
 
         Application app = validateDraftSubmissionOwnership(appId);
-
-        checkCanSubmit(app.getStudent().getStudentId(), app.getDepartment().getDeptId());
 
         documentService.validateMandatoryDocuments(app);
 
@@ -102,7 +113,6 @@ public class ApplicationService {
         validateInternalStudentNotSameDepartment(student, app);
 
         app.setGpa(student.getGpa());
-        checkCanSubmit(student.getStudentId(), app.getDepartment().getDeptId());
 
         finalizeSubmission(app, "Internal application submitted");
 
@@ -147,7 +157,7 @@ public class ApplicationService {
 
     private void checkCanSubmit(Long studentId, Long deptId) {
 
-        if (applicationRepository.existsByStudent_StudentIdAndDepartment_DeptIdAndStatusNotIn(studentId, deptId, ALLOWED_FOR_NEW_APPLICATION)) {
+        if (applicationRepository.existsByStudent_StudentIdAndDepartment_DeptId(studentId, deptId)) {
 
             throw new BusinessException("APP-409", "Bu bölüm için devam eden veya sonuçlanmış bir başvurunuz bulunmaktadır.");
         }
@@ -434,18 +444,33 @@ public class ApplicationService {
         return applicationMapper.map(app);
     }
 
-    public List<ApplicationStatusHistory> getMyApplicationHistory(Long appId) {
 
-        Application app = findApplicationById(appId);
+    public StudentProfileDto getMyStudentProfile(Long studentId) {
 
-        if (!app.getStudent().getStudentId()
-                .equals(SecurityUtil.getCurrentStudentId())) {
+        Student student = studentService.findStudentIdByStudentId(studentId);
 
-            throw new BusinessException("SEC-403",
-                    "Bu başvuru size ait değil.");
-        }
+        return studentMapper.map(student);
+    }
 
-        return transitionService.findApplicationByCharged(appId);
+
+    public ApplicationResponseDto getMyApplicationById(Long studentId, Long appId) {
+
+        Application app = applicationRepository
+                .findByAppIdAndStudent_StudentId(appId, studentId)
+                .orElseThrow(() ->
+                        new BusinessException("APP-404", "Başvuru bulunamadı."));
+
+        return applicationMapper.map(app);
+    }
+
+    public List<ApplicationStatusHistoryDto> getMyApplicationHistory(Long appId) {
+
+        List<ApplicationStatusHistory> list =
+                historyRepository.findByApplication_AppId(appId);
+
+        return list.stream()
+                .map(historyMapper::map)
+                .toList();
     }
 
 }
