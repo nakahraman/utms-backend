@@ -47,7 +47,7 @@ public class ApplicationService {
     @Transactional
     public Long createDraft(Long userId, Long deptId) {
 
-        Student student = studentService.resolveStudent(userId);
+        Student student = studentService.findStudentOrFail(userId);
         Department dept = departmentService.findDepartmentById(deptId);
 
         checkCanSubmit(student.getStudentId(), dept.getDeptId());

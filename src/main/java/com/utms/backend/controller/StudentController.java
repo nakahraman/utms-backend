@@ -3,8 +3,11 @@ package com.utms.backend.controller;
 import com.utms.backend.model.dto.ApplicationResponseDto;
 import com.utms.backend.model.dto.ApplicationStatusHistoryDto;
 import com.utms.backend.model.dto.StudentProfileDto;
+import com.utms.backend.model.entities.Student;
+import com.utms.backend.model.record.ExternalProfileRequest;
 import com.utms.backend.security.SecurityUtil;
 import com.utms.backend.service.ApplicationService;
+import com.utms.backend.service.StudentService;
 import com.utms.backend.statusHistory.ApplicationStatusHistory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +24,7 @@ import java.util.List;
 public class StudentController {
 
     private final ApplicationService applicationService;
+    private final StudentService studentService;
 
     @PostMapping("/draft")
     @PreAuthorize("hasRole('STUDENT')")
@@ -50,8 +54,10 @@ public class StudentController {
     @GetMapping("/me/applications")
     public List<ApplicationResponseDto> getMyApplications() {
 
-        Long studentId = SecurityUtil.getCurrentStudentId();
-        return applicationService.getApplicationsByStudent(studentId);
+        Long userId = SecurityUtil.getCurrentUserId();
+
+        Student student = studentService.resolveStudent(userId);
+        return applicationService.getApplicationsByStudent(student.getStudentId());
     }
 
     @PreAuthorize("hasRole('STUDENT')")
@@ -80,14 +86,32 @@ public class StudentController {
     @GetMapping("/me/{id}")
     public ApplicationResponseDto getMyApplication(@PathVariable Long id) {
 
-        Long studentId = SecurityUtil.getCurrentStudentId();
-        return applicationService.getMyApplicationById(studentId, id);
+        Long userId = SecurityUtil.getCurrentUserId();
+
+        Student student = studentService.resolveStudent(userId);
+
+        return applicationService.getMyApplicationById(student.getStudentId(), id);
     }
 
     @PreAuthorize("hasRole('STUDENT')")
     @GetMapping("/me/applications/{appId}/history")
     public List<ApplicationStatusHistoryDto> getMyApplicationHistory(@PathVariable Long appId) {
         return applicationService.getMyApplicationHistory(appId);
+    }
+
+    @GetMapping("/me/profile-status")
+    @PreAuthorize("hasRole('STUDENT')")
+    public boolean isProfileComplete() {
+        Long userId = SecurityUtil.getCurrentUserId();
+        return studentService.isExternalProfileComplete(userId);
+    }
+
+
+    @PostMapping("/me/external-profile")
+    @PreAuthorize("hasRole('STUDENT')")
+    public void updateExternalProfile(@RequestBody ExternalProfileRequest req) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        studentService.updateExternalProfile(userId, req);
     }
 
 }
