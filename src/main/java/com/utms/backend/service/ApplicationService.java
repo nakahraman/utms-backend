@@ -176,10 +176,6 @@ public class ApplicationService {
                         .map(applicationMapper::map)
                         .toList();
 
-        if (list.isEmpty())
-            throw new BusinessException("APP-404",
-                    "Henüz hiç başvuru yapmadınız.");
-
         return list;
     }
 

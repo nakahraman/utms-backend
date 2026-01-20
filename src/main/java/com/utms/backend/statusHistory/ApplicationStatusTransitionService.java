@@ -38,7 +38,7 @@ public class ApplicationStatusTransitionService {
 
                     // --- YDYO ---
                     Map.entry(ApplicationStatus.SENT_TO_YDYO,
-                            Set.of(ApplicationStatus.OIDB_VALIDATED,
+                            Set.of(ApplicationStatus.YDYO_APPROVED,
                                     ApplicationStatus.YDYO_EXAM_REQUIRED)),
 
                     Map.entry(ApplicationStatus.YDYO_EXAM_REQUIRED,
