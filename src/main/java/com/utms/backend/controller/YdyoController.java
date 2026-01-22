@@ -33,14 +33,17 @@ public class YdyoController {
     @PreAuthorize("hasRole('YDYO')")
     @GetMapping("/inbox")
     public List<ApplicationResponseDto> getInbox() {
-        return applicationService.getApplicationsByStatus(ApplicationStatus.SENT_TO_YDYO);
+        return applicationService.getYdyoInbox();
     }
+
 
     @PreAuthorize("hasRole('YDYO')")
     @PostMapping("/validate")
-    public ApplicationResponseDto validate(@RequestParam Long appId) {
-        return applicationService.validateYdyo(appId);
+    public ApplicationResponseDto validate(@RequestParam Long appId,
+                                           @RequestParam boolean examRequired) {
+        return applicationService.validateYdyo(appId, examRequired);
     }
+
 
     @PreAuthorize("hasRole('YDYO')")
     @PostMapping("/placement-exam")
@@ -50,7 +53,7 @@ public class YdyoController {
     }
 
     @PreAuthorize("hasRole('YDYO')")
-    @GetMapping("/ydyo/document")
+    @GetMapping("/document")
     public ResponseEntity<byte[]> downloadForYdyo(@RequestParam Long appId,
                                                   @RequestParam DocumentType type) {
 

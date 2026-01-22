@@ -107,4 +107,25 @@ public class OidbService {
         return applicationMapper.map(updated);
     }
 
+    public ApplicationResponseDto markYdyoCriteriaNotMet(Long appId) {
+
+        Application app = applicationService.findApplicationById(appId);
+
+        if (app.getStatus() != ApplicationStatus.YDYO_FAILED) {
+            throw new BusinessException(
+                    "OIDB-406",
+                    "Only applications that failed the English proficiency exam (YDYO) can be marked as academically ineligible."
+            );
+        }
+
+        Application updated = transitionService.transition(
+                app,
+                ApplicationStatus.YDYO_CRITERIA_NOT_MET,
+                "Application was marked as academically ineligible due to failure in the English proficiency exam."
+        );
+
+        return applicationMapper.map(updated);
+    }
+
+
 }

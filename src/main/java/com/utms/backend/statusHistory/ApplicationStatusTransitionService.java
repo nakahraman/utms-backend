@@ -42,12 +42,15 @@ public class ApplicationStatusTransitionService {
                                     ApplicationStatus.YDYO_EXAM_REQUIRED)),
 
                     Map.entry(ApplicationStatus.YDYO_EXAM_REQUIRED,
-                            Set.of(ApplicationStatus.YDYO_APPROVED)),
+                            Set.of(ApplicationStatus.YDYO_APPROVED,
+                                    ApplicationStatus.YDYO_FAILED)),
 
                     Map.entry(ApplicationStatus.YDYO_APPROVED,
                             Set.of(ApplicationStatus.OIDB_VALIDATED,
                                     ApplicationStatus.OIDB_FLAGGED)),
 
+                    Map.entry(ApplicationStatus.YDYO_FAILED,
+                            Set.of(ApplicationStatus.YDYO_CRITERIA_NOT_MET)),
 
                     // --- OIDB ---
                     Map.entry(ApplicationStatus.OIDB_FLAGGED,
@@ -110,6 +113,7 @@ public class ApplicationStatusTransitionService {
 
         // 1) App status güncelle
         app.setStatus(toStatus);
+        app.setSubmissionDate(LocalDateTime.now());
         Application saved = applicationRepository.save(app);
 
         // 2) History yaz

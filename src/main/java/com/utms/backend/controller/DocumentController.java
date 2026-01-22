@@ -38,7 +38,7 @@ public class DocumentController {
     }
 
     @GetMapping("/application/{appId}/type/{documentType}")
-    @PreAuthorize("hasAnyRole('OIDB')")
+    @PreAuthorize("hasAnyRole('YDYO','OIDB','FACULTY','YGK')")
     public ResponseEntity<byte[]> downloadByAppAndType(
             @PathVariable Long appId,
             @PathVariable DocumentType documentType) {

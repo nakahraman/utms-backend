@@ -187,6 +187,20 @@ public class ApplicationService {
                 .toList();
     }
 
+    public List<ApplicationResponseDto> getYdyoInbox() {
+
+        List<ApplicationStatus> statuses = List.of(
+                ApplicationStatus.SENT_TO_YDYO,
+                ApplicationStatus.YDYO_EXAM_REQUIRED
+        );
+
+        return applicationRepository.findByStatusIn(statuses)
+                .stream()
+                .map(applicationMapper::map)
+                .toList();
+    }
+
+
     public List<ApplicationResponseDto> getFacEvaluatedApplicationsForYgk(ApplicationStatus status) {
         return applicationRepository.findByStatus(status)
                 .stream()
@@ -324,6 +338,54 @@ public class ApplicationService {
     }
 
     @Transactional
+    public ApplicationResponseDto validateYdyo(Long appId, boolean examRequired) {
+
+        Application app = findApplicationById(appId);
+
+        if (app.getStatus() != ApplicationStatus.SENT_TO_YDYO) {
+            throw new BusinessException("YDYO-401",
+                    "Only SENT_TO_YDYO applications can be validated");
+        }
+
+        // 🔵 INTERNAL → direkt geçer
+        if (app.getStudent().getStudentType() == StudentType.INTERNAL) {
+            app.setEnglishResult(EnglishProficiencyResult.PASSED);
+
+            return applicationMapper.map(
+                    transitionService.transition(
+                            app,
+                            ApplicationStatus.YDYO_APPROVED,
+                            "Internal student – English proficiency assumed valid"
+                    )
+            );
+        }
+
+        // 🔴 YDYO: SINAV GEREKLİ DEDİYSE
+        if (examRequired) {
+            app.setEnglishResult(EnglishProficiencyResult.EXAM_REQUIRED);
+
+            return applicationMapper.map(
+                    transitionService.transition(
+                            app,
+                            ApplicationStatus.YDYO_EXAM_REQUIRED,
+                            "Placement exam required by YDYO"
+                    )
+            );
+        }
+
+        // 🟢 YDYO: BELGEYİ ONAYLADIYSA
+        app.setEnglishResult(EnglishProficiencyResult.PASSED);
+
+        return applicationMapper.map(
+                transitionService.transition(
+                        app,
+                        ApplicationStatus.YDYO_APPROVED,
+                        "English certificate approved by YDYO"
+                )
+        );
+    }
+
+    @Transactional
     public ApplicationResponseDto validateYdyo(Long appId) {
 
         Application app = findApplicationById(appId);
@@ -386,22 +448,29 @@ public class ApplicationService {
 
         Application app = findApplicationById(appId);
 
-        if (app.getStatus() != ApplicationStatus.YDYO_EXAM_REQUIRED)
+        if (app.getStatus() != ApplicationStatus.YDYO_EXAM_REQUIRED) {
             throw new BusinessException("YDYO-402",
                     "Only exam required applications can be finalized");
+        }
 
-        app.setEnglishResult(passed
-                ? EnglishProficiencyResult.PASSED
-                : EnglishProficiencyResult.FAILED);
+        app.setEnglishResult(
+                passed
+                        ? EnglishProficiencyResult.PASSED
+                        : EnglishProficiencyResult.FAILED
+        );
 
         return applicationMapper.map(
-                transitionService.transition(app,
-                        ApplicationStatus.YDYO_APPROVED,
-                        passed ? "Placement exam passed"
-                                : "Placement exam failed")
+                transitionService.transition(
+                        app,
+                        passed
+                                ? ApplicationStatus.YDYO_APPROVED
+                                : ApplicationStatus.YDYO_FAILED,
+                        passed
+                                ? "Placement exam passed"
+                                : "Placement exam failed"
+                )
         );
     }
-
 
     public List<ApplicationResponseDto> getFinalizedResults(Long deptId, Boolean published) {
 
@@ -410,7 +479,8 @@ public class ApplicationService {
                 ApplicationStatus.YGK_WAITLISTED,
                 ApplicationStatus.YGK_REJECTED,
                 ApplicationStatus.ACADEMICALLY_INELIGIBLE,
-                ApplicationStatus.RESULT_PUBLISHED
+                ApplicationStatus.RESULT_PUBLISHED,
+                ApplicationStatus.YDYO_FAILED
         );
 
         return applicationRepository

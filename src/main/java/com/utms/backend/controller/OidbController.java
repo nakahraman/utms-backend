@@ -81,4 +81,10 @@ public class OidbController {
         return oidbService.getFinalizedResults(deptId, published);
     }
 
+    @PostMapping("/mark-ydyo-criteria-not-met")
+    @PreAuthorize("hasRole('OIDB')")
+    public void markYdyoCriteriaNotMet(@RequestParam Long appId) {
+        oidbService.markYdyoCriteriaNotMet(appId);
+    }
+
 }

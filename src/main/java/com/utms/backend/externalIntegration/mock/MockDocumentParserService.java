@@ -23,14 +23,14 @@ public class MockDocumentParserService {
 
         } else if (name.contains("mid")) {
 
-            data.setGpa(2.85);
+            data.setGpa(3.10);
             data.setCompletedSemesters(3);
             data.setHasFailedCourse(false);
             data.setHasLeaveSemester(false);
 
         } else { // low
 
-            data.setGpa(2.10);
+            data.setGpa(2.50);
             data.setCompletedSemesters(2);
             data.setHasFailedCourse(true);
             data.setHasLeaveSemester(true);

@@ -18,10 +18,13 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -172,13 +175,14 @@ public class DocumentService {
     public ResponseEntity<byte[]> downloadByAppAndType(Long appId, DocumentType type) {
 
         TransferDocument doc = getTransferDocument(appId, type)
-                .orElseThrow(() -> new BusinessException("DOC-404","Document not found"));
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found")
+                );
 
-        Long userId = SecurityUtil.getCurrentUserId();
-        if (!doc.getApplication().getStudent().getUser().getUserId().equals(userId))
-            throw new BusinessException("SEC-403","Access denied");
-
-        byte[] plain = storageService.readAndDecrypt(doc.getFilePath(), doc.getEncryptionIv());
+        byte[] plain = storageService.readAndDecrypt(
+                doc.getFilePath(),
+                doc.getEncryptionIv()
+        );
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
@@ -189,6 +193,14 @@ public class DocumentService {
 
     public Optional<TransferDocument> getTransferDocument(Long appId, DocumentType documentType) {
         return documentRepository.findByApplication_AppIdAndDocumentType(appId, documentType);
+    }
+
+    public static boolean hasRole(String role) {
+        return SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getAuthorities()
+                .stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
     }
 
 }

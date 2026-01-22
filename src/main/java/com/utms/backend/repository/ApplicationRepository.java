@@ -3,6 +3,7 @@ package com.utms.backend.repository;
 import com.utms.backend.model.entities.Application;
 import com.utms.backend.model.enums.ApplicationStatus;
 import com.utms.backend.model.enums.OidbStatus;
+import io.micrometer.common.KeyValues;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -90,4 +91,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     Optional<Application> findTopByStudentStudentIdOrderByCreatedDateDesc(Long studentId);
 
     Optional<Application> findByAppIdAndStudent_StudentId(Long appId, Long studentId);
+
+    List<Application> findByStatusIn(List<ApplicationStatus> statuses);
 }

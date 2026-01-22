@@ -13,7 +13,9 @@ public enum ApplicationStatus {
     // External student – YDYO
     SENT_TO_YDYO,
     YDYO_APPROVED,
+    YDYO_FAILED,
     YDYO_EXAM_REQUIRED,
+    YDYO_CRITERIA_NOT_MET,
 
     FACULTY_RETURNED,
     YGK_APPROVED,
